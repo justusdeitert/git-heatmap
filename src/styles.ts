@@ -145,7 +145,7 @@ h1 span { color: var(--text-muted); font-weight: 400; }
 .meta-item { display: flex; align-items: center; gap: 4px; }
 .meta-item svg { width: 14px; height: 14px; }
 
-.commit-list { max-height: 420px; overflow-y: auto; }
+.commit-list { }
 
 .commit-row {
   display: grid;
@@ -178,6 +178,36 @@ h1 span { color: var(--text-muted); font-weight: 400; }
 }
 
 .commit-empty { padding: 16px 0; color: var(--text-muted); font-size: 13px; }
+
+.commit-count { color: var(--text-muted); font-weight: 400; font-size: 12px; }
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination:empty { display: none; }
+
+.pag-btn {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.pag-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pag-btn:disabled { opacity: 0.4; cursor: default; }
+
+.pag-info { font-size: 12px; color: var(--text-muted); }
 
 footer { text-align: center; padding: 24px 0; font-size: 11px; color: var(--text-muted); }
 footer a { color: var(--accent); text-decoration: none; }

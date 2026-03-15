@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -86,7 +86,18 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     return
   }
 
-  if (req.url !== '/' && req.url !== '/index.html') {
+  const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
+  if (parsed.pathname === '/api/commits') {
+    const page = Math.max(1, parseInt(parsed.searchParams.get('page') ?? '1', 10) || 1)
+    const perPage = 20
+    const total = getCommitCount()
+    const commits = getRecentCommits(perPage, (page - 1) * perPage)
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
+    return
+  }
+
+  if (parsed.pathname !== '/' && parsed.pathname !== '/index.html') {
     res.writeHead(404, { 'Content-Type': 'text/plain' })
     res.end('Not Found')
     return

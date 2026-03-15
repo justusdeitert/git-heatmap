@@ -117,7 +117,44 @@ const CLIENT_JS = `
     el.addEventListener('mousemove', e => { t.style.left = e.clientX + 12 + 'px'; t.style.top = e.clientY - 36 + 'px'; });
     el.addEventListener('mouseleave', () => t.classList.remove('visible'));
   });
-  new EventSource('/events').addEventListener('message', () => location.reload());`
+  new EventSource('/events').addEventListener('message', () => location.reload());
+
+  let currentPage = 1;
+  function relTime(iso) {
+    const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return 'just now';
+    const m = Math.floor(s / 60); if (m < 60) return m + 'm ago';
+    const h = Math.floor(m / 60); if (h < 24) return h + 'h ago';
+    const d = Math.floor(h / 24); if (d < 30) return d + 'd ago';
+    return Math.floor(d / 30) + 'mo ago';
+  }
+  function esc(s) { return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  async function loadCommits(page) {
+    const res = await fetch('/api/commits?page=' + page);
+    const data = await res.json();
+    currentPage = data.page;
+    const list = document.getElementById('commitList');
+    const countEl = document.getElementById('commitCount');
+    countEl.textContent = '(' + data.total + ')';
+    if (data.commits.length === 0) {
+      list.innerHTML = '<div class="commit-empty">No commits found</div>';
+    } else {
+      list.innerHTML = data.commits.map(c =>
+        '<div class="commit-row">' +
+        '<code class="commit-hash">' + c.hash + '</code>' +
+        '<span class="commit-msg">' + esc(c.message) + '</span>' +
+        '<span class="commit-meta">' + esc(c.author) + ' &middot; ' + relTime(c.date) + '</span>' +
+        '</div>'
+      ).join('');
+    }
+    const pag = document.getElementById('pagination');
+    if (data.totalPages <= 1) { pag.innerHTML = ''; return; }
+    let html = '<button class="pag-btn" ' + (page <= 1 ? 'disabled' : '') + ' onclick="loadCommits(' + (page - 1) + ')">&larr;</button>';
+    html += '<span class="pag-info">Page ' + page + ' of ' + data.totalPages + '</span>';
+    html += '<button class="pag-btn" ' + (page >= data.totalPages ? 'disabled' : '') + ' onclick="loadCommits(' + (page + 1) + ')">&rarr;</button>';
+    pag.innerHTML = html;
+  }
+  loadCommits(1);`
 
 // --- Page template ---
 
@@ -167,8 +204,9 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
       </div>
     </div>
     <div class="card">
-      <div class="card-title">${icons.gitCommit} Recent Commits</div>
-      <div class="commit-list">${commitList(recentCommits)}</div>
+      <div class="card-title">${icons.gitCommit} Commits <span class="commit-count" id="commitCount"></span></div>
+      <div class="commit-list" id="commitList">${commitList(recentCommits)}</div>
+      <div class="pagination" id="pagination"></div>
     </div>
   </div>
 
