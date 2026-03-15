@@ -447,7 +447,7 @@ footer a { color: var(--accent); text-decoration: none; }
   border-radius: 6px;
   color: var(--text);
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
-  font-size: 13px;
+  font-size: 12px;
   resize: vertical;
   box-sizing: border-box;
 }
