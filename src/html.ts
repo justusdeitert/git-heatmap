@@ -121,7 +121,7 @@ const CLIENT_JS = `
 
 // --- Page template ---
 
-const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230d1117'/><rect x='2' y='2' width='4' height='4' rx='1' fill='%2339d353'/><rect x='6' y='6' width='4' height='4' rx='1' fill='%2326a641'/><rect x='10' y='10' width='4' height='4' rx='1' fill='%23006d32'/><rect x='2' y='10' width='4' height='4' rx='1' fill='%230e4429'/></svg>">`
+const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%231f2328' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: light)"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%23e6edf3' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: dark)">`
 
 export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits }: DashboardData): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP)
