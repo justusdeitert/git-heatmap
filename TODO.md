@@ -18,5 +18,5 @@
 
 - [ ] **Multi-branch comparison** — toggle between branches to see different heatmaps
 - [ ] **Date range picker** — custom time window instead of fixed last 12 months
-- [ ] **CLI flags** — `--port`, `--no-open`, `--branch=main` to customize without env vars
+- [x] **CLI flags** — `--port`, `--no-open` to customize without env vars
 - [ ] **Repo comparison mode** — run from parent directory, see multiple repos side-by-side

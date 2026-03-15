@@ -7,6 +7,21 @@ import { join } from 'node:path'
 import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
+import { parseArgs } from './args.js'
+
+const args = parseArgs(process.argv.slice(2))
+
+if (args.help) {
+  console.log(`
+  Usage: git-dashboard [options]
+
+  Options:
+    --port <number>   Port to listen on (default: 3333, or PORT env)
+    --no-open         Don't open browser automatically
+    -h, --help        Show this help message
+`)
+  process.exit(0)
+}
 
 if (!isInsideRepo()) {
   console.error('Error: Not a git repository.')
@@ -90,12 +105,12 @@ function openBrowser(url: string): void {
 
 // --- Start ---
 
-const PORT = parseInt(process.env.PORT ?? '3333', 10)
+const PORT = args.port ?? parseInt(process.env.PORT ?? '3333', 10)
 
 watchGitDir()
 createServer(handleRequest).listen(PORT, '127.0.0.1', () => {
   const url = `http://127.0.0.1:${PORT}`
   console.log(`\n  ● Git Dashboard running at ${url}`)
   console.log('  Live-reloads on git changes. Press Ctrl+C to stop.\n')
-  openBrowser(url)
+  if (args.open) openBrowser(url)
 })

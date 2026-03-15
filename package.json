@@ -1,5 +1,5 @@
 {
-  "name": "git-dashboard",
+  "name": "@justusdeitert/git-dashboard",
   "version": "0.1.0",
   "description": "Beautiful live git dashboard with commit heatmap",
   "type": "module",
@@ -7,7 +7,9 @@
     "git-dashboard": "./dist/index.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc",
@@ -18,14 +20,17 @@
     "dashboard",
     "heatmap",
     "commits",
-    "cli"
+    "cli",
+    "contribution-graph",
+    "developer-tools"
   ],
+  "author": "Justus Deitert <mail@justusdeitert.de>",
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
     "typescript": "^5.8.2"
-  },
-  "license": "MIT"
+  }
 }
