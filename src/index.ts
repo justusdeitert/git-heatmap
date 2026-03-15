@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, rewriteCommitMessage, rewriteCommitDate } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -43,15 +43,19 @@ function buildDashboard(): string {
   const monthLabels = getMonthLabels(weeks)
   const stats = computeStats(commitMap, dates.length)
   const recentCommits = getRecentCommits()
+  const dirty = hasUncommittedChanges()
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits })
+  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty })
 }
 
 // --- SSE live-reload ---
 
 const sseClients = new Set<ServerResponse>()
 
+let watchPaused = false
+
 function notifyClients(): void {
+  if (watchPaused) return
   for (const res of sseClients) {
     res.write('data: reload\n\n')
   }
@@ -70,6 +74,24 @@ function watchGitDir(): void {
       })
     } catch { /* dir may not exist yet */ }
   }
+
+  // Watch working tree for file changes; only run git status when something changes
+  let lastDirty = hasUncommittedChanges()
+  let dirtyDebounce: ReturnType<typeof setTimeout> | null = null
+  try {
+    watch('.', { recursive: true }, (_event, filename) => {
+      if (watchPaused) return
+      if (typeof filename === 'string' && (filename.startsWith('.git') || filename.includes('node_modules'))) return
+      if (dirtyDebounce) clearTimeout(dirtyDebounce)
+      dirtyDebounce = setTimeout(() => {
+        const dirty = hasUncommittedChanges()
+        if (dirty !== lastDirty) {
+          lastDirty = dirty
+          notifyClients()
+        }
+      }, 200)
+    })
+  } catch { /* recursive watch not supported */ }
 }
 
 // --- HTTP server ---
@@ -89,6 +111,58 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
 
   const commitMatch = parsed.pathname.match(/^\/api\/commit\/([a-f0-9]+)$/)
+  if (commitMatch && req.method === 'PATCH') {
+    let body = ''
+    req.on('data', (chunk: Buffer) => { body += chunk.toString() })
+    req.on('end', () => {
+      try {
+        const { message } = JSON.parse(body)
+        if (typeof message !== 'string' || !message.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Message is required' }))
+          return
+        }
+        rewriteCommitMessage(commitMatch[1], message.trim())
+        const detail = getCommitDetail(commitMatch[1])
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(detail ?? { ok: true }))
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: (err as Error).message }))
+      }
+    })
+    return
+  }
+
+  if (commitMatch && req.method === 'PUT') {
+    let body = ''
+    req.on('data', (chunk: Buffer) => { body += chunk.toString() })
+    req.on('end', () => {
+      try {
+        const { date } = JSON.parse(body)
+        if (typeof date !== 'string' || !date.trim()) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Date is required' }))
+          return
+        }
+        // Validate it's a parseable date
+        if (isNaN(new Date(date).getTime())) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error: 'Invalid date format' }))
+          return
+        }
+        rewriteCommitDate(commitMatch[1], date.trim())
+        const detail = getCommitDetail(commitMatch[1])
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify(detail ?? { ok: true }))
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: (err as Error).message }))
+      }
+    })
+    return
+  }
+
   if (commitMatch) {
     const detail = getCommitDetail(commitMatch[1])
     if (!detail) {
@@ -96,8 +170,12 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
       res.end(JSON.stringify({ error: 'Commit not found' }))
       return
     }
+    watchPaused = true
+    const editableStatus = getCommitEditableStatus(commitMatch[1])
+    // Keep paused past the 300ms debounce window so async watcher events are ignored
+    setTimeout(() => { watchPaused = false }, 500)
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify(detail))
+    res.end(JSON.stringify({ ...detail, ...editableStatus }))
     return
   }
 

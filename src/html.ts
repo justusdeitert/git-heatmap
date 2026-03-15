@@ -105,12 +105,16 @@ function relativeTime(iso: string): string {
 
 function commitList(commits: RecentCommit[]): string {
   if (commits.length === 0) return '<div class="commit-empty">No commits found</div>'
-  return commits.map(c => `
+  return commits.map(c => {
+    const dateMismatch = c.date !== c.committerDate
+    const warn = dateMismatch ? '<span class="commit-warn" title="Author date and committer date differ">&#9888;</span>' : ''
+    return `
     <div class="commit-row">
       <code class="commit-hash" data-full="${c.fullHash}" title="Click to copy">${c.hash}<svg class="copy-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></code>
       <span class="commit-msg">${c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
-      <span class="commit-meta">${c.author} &middot; ${relativeTime(c.date)}</span>
-    </div>`).join('')
+      <span class="commit-meta">${c.author} &middot; ${relativeTime(c.date)}${warn}</span>
+    </div>`
+  }).join('')
 }
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -120,10 +124,15 @@ const CLIENT_JS = readFileSync(join(__dirname, 'client.js'), 'utf-8')
 
 const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%231f2328' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: light)"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%23e6edf3' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: dark)">`
 
-export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits }: DashboardData): string {
+export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirty }: DashboardData): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP)
   const svgHeight = HEADER_H + 7 * (CELL + GAP)
   const now = new Date().toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const dirtyBanner = dirty ? `
+    <div class="dirty-banner">
+      <span class="dirty-icon">&#9888;</span>
+      You have uncommitted changes in your working directory.
+    </div>` : ''
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -141,7 +150,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
       <h1>${repoName} <span>— Git Dashboard</span></h1>
       <span class="badge">${branch}</span>
     </header>
-
+${dirtyBanner}
     <div class="stats">${statCards(stats, authors)}</div>
 
     <div class="card">

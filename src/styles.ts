@@ -281,7 +281,7 @@ footer a { color: var(--accent); text-decoration: none; }
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 24px;
+  padding: 50px 24px 24px;
   max-width: 640px;
   width: 90vw;
   max-height: 80vh;
@@ -404,5 +404,169 @@ footer a { color: var(--accent); text-decoration: none; }
   padding: 32px 0;
   color: var(--text-muted);
   font-size: 13px;
+}
+
+.modal-subject-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.modal-subject-row .modal-subject {
+  flex: 1;
+  min-width: 0;
+}
+.rename-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  transition: color .15s, border-color .15s;
+}
+.rename-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.edit-icon {
+  width: 14px;
+  height: 14px;
+}
+.rename-form {
+  margin: 8px 0 4px;
+}
+.rename-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.rename-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.rename-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+}
+.rename-cancel, .rename-save {
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: opacity .15s;
+}
+.rename-cancel {
+  background: transparent;
+  color: var(--text-muted);
+}
+.rename-cancel:hover {
+  color: var(--text);
+}
+.rename-save {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.rename-save:hover {
+  opacity: .85;
+}
+.rename-save[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.rename-error {
+  color: #f47067;
+  font-size: 12px;
+  margin-top: 6px;
+}
+
+.date-edit-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 5px;
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 6px;
+  transition: color .15s, border-color .15s;
+}
+.date-edit-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.date-edit-btn .edit-icon {
+  width: 12px;
+  height: 12px;
+}
+.date-edit-form {
+  margin: 6px 0 4px;
+}
+.date-edit-input {
+  padding: 6px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  color-scheme: dark;
+}
+.date-edit-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.modal-edit-notice {
+  font-size: 12px;
+  color: #d29922;
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.commit-warn {
+  color: #d29922;
+  margin-left: 6px;
+  cursor: help;
+  font-size: 13px;
+}
+
+.dirty-banner {
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #d29922;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.dirty-icon {
+  font-size: 16px;
 }
 `

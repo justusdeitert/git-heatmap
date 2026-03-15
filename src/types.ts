@@ -31,6 +31,7 @@ export interface RecentCommit {
   message: string
   author: string
   date: string
+  committerDate: string
 }
 
 export interface DashboardData {
@@ -43,4 +44,5 @@ export interface DashboardData {
   branch: string
   firstCommit: string | null
   recentCommits: RecentCommit[]
+  dirty: boolean
 }

@@ -1,4 +1,7 @@
 import { execSync } from 'node:child_process'
+import { writeFileSync, unlinkSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim()
 
@@ -60,6 +63,7 @@ export interface RawCommit {
   message: string
   author: string
   date: string
+  committerDate: string
 }
 
 export interface CommitDetail {
@@ -81,11 +85,11 @@ export function getCommitCount(): number {
 
 export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
   const sep = '---GD---'
-  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI" --skip=${skip} -${count}`)
+  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --skip=${skip} -${count}`)
   if (!raw) return []
   return raw.split('\n').filter(Boolean).map(line => {
-    const [hash, fullHash, message, author, date] = line.split(sep)
-    return { hash, fullHash, message, author, date }
+    const [hash, fullHash, message, author, date, committerDate] = line.split(sep)
+    return { hash, fullHash, message, author, date, committerDate }
   })
 }
 
@@ -119,12 +123,117 @@ export function getCommitsByDate(date: string): RawCommit[] {
   const next = new Date(d); next.setDate(next.getDate() + 2)
   const after = prev.toISOString().slice(0, 10)
   const before = next.toISOString().slice(0, 10)
-  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI" --after="${after}" --before="${before}"`)
+  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --after="${after}" --before="${before}"`)
   if (!raw) return []
   return raw.split('\n').filter(Boolean)
     .map(line => {
-      const [hash, fullHash, message, author, d] = line.split(sep)
-      return { hash, fullHash, message, author, date: d }
+      const [hash, fullHash, message, author, d, committerDate] = line.split(sep)
+      return { hash, fullHash, message, author, date: d, committerDate }
     })
     .filter(c => c.date.startsWith(date))
+}
+
+export function isHeadCommit(hash: string): boolean {
+  const head = git('git rev-parse HEAD')
+  const resolved = git(`git rev-parse ${hash}`)
+  return head === resolved
+}
+
+export function hasUncommittedChanges(): boolean {
+  return execSync('git --no-optional-locks status --porcelain', { encoding: 'utf8' }).trim().length > 0
+}
+
+export function isCommitOnRemote(hash: string): boolean {
+  try {
+    const branches = execSync(`git branch -r --contains ${hash}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim()
+    return branches.length > 0
+  } catch {
+    return false
+  }
+}
+
+export function getCommitEditableStatus(hash: string): { editable: boolean; reason?: string } {
+  if (hasUncommittedChanges()) {
+    return { editable: false, reason: 'You have uncommitted changes. Please commit or stash them first.' }
+  }
+  if (isCommitOnRemote(hash)) {
+    return { editable: false, reason: 'This commit has already been pushed to a remote branch.' }
+  }
+  return { editable: true }
+}
+
+export function rewriteCommitMessage(hash: string, newMessage: string): void {
+  const msgFile = join(tmpdir(), 'git-dashboard-msg-' + Date.now() + '.txt')
+  writeFileSync(msgFile, newMessage)
+  try {
+    if (isHeadCommit(hash)) {
+      // Preserve the original committer date
+      const committerDate = git(`git log -1 --format="%cI" ${hash}`)
+      execSync(
+        'git commit --amend -F ' + JSON.stringify(msgFile),
+        { encoding: 'utf8', stdio: 'pipe', env: { ...process.env, GIT_COMMITTER_DATE: committerDate } }
+      )
+      return
+    }
+
+    const resolved = git(`git rev-parse ${hash}`)
+    // Automate interactive rebase: change 'pick <hash>' to 'reword <hash>'
+    const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/reword ${resolved.slice(0, 7)}/'`
+    const msgEditor = `cp ${JSON.stringify(msgFile)}`
+    try {
+      execSync(
+        `GIT_SEQUENCE_EDITOR="${seqEditor}" GIT_EDITOR="${msgEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`,
+        { encoding: 'utf8', stdio: 'pipe' }
+      )
+    } catch (err) {
+      try { execSync('git rebase --abort', { stdio: 'pipe' }) } catch { /* ignore */ }
+      throw err
+    }
+  } finally {
+    try { unlinkSync(msgFile) } catch { /* ignore */ }
+  }
+}
+
+export function rewriteCommitDate(hash: string, newDate: string): void {
+  if (isHeadCommit(hash)) {
+    // Read the current commit message to preserve it
+    const subject = git(`git log -1 --format="%s" ${hash}`)
+    const body = git(`git log -1 --format="%b" ${hash}`)
+    const fullMsg = body ? subject + '\n\n' + body : subject
+    const msgFile = join(tmpdir(), 'git-dashboard-date-' + Date.now() + '.txt')
+    writeFileSync(msgFile, fullMsg)
+    try {
+      execSync(
+        'git commit --amend -F ' + JSON.stringify(msgFile) + ' --date=' + JSON.stringify(newDate),
+        { encoding: 'utf8', stdio: 'pipe', env: { ...process.env, GIT_COMMITTER_DATE: newDate } }
+      )
+    } finally {
+      try { unlinkSync(msgFile) } catch { /* ignore */ }
+    }
+    return
+  }
+
+  const resolved = git(`git rev-parse ${hash}`)
+  try {
+    const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`
+    // Start interactive rebase, pausing at the target commit
+    execSync(
+      `GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${resolved}~1`,
+      { encoding: 'utf8', stdio: 'pipe' }
+    )
+    // Amend the date while paused
+    execSync(
+      'git commit --amend --no-edit --date=' + JSON.stringify(newDate),
+      { encoding: 'utf8', stdio: 'pipe', env: { ...process.env, GIT_COMMITTER_DATE: newDate } }
+    )
+    // Continue rebase
+    execSync(
+      'git rebase --continue',
+      { encoding: 'utf8', stdio: 'pipe' }
+    )
+  } catch (err) {
+    // Abort rebase on failure to avoid leaving repo in broken state
+    try { execSync('git rebase --abort', { stdio: 'pipe' }) } catch { /* ignore */ }
+    throw err
+  }
 }

@@ -24,7 +24,10 @@ document.querySelectorAll<HTMLElement>('.day').forEach(el => {
   })
 })
 
-new EventSource('/events').addEventListener('message', () => location.reload())
+let reloadSuppressed = false
+new EventSource('/events').addEventListener('message', () => {
+  if (!reloadSuppressed) location.reload()
+})
 
 const COPY_ICON = '<svg class="copy-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
 const CHECK_ICON = '<svg class="copy-icon copied" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>'
@@ -98,6 +101,7 @@ interface CommitEntry {
   message: string
   author: string
   date: string
+  committerDate: string
 }
 
 interface CommitResponse {
@@ -122,15 +126,18 @@ async function loadCommits(page: number): Promise<void> {
   if (data.commits.length === 0) {
     list.innerHTML = '<div class="commit-empty">No commits found</div>'
   } else {
-    list.innerHTML = data.commits.map(c =>
-      '<div class="commit-row">' +
-      '<code class="commit-hash" data-full="' + c.fullHash + '" title="Click to copy">' + c.hash + COPY_ICON + '</code>' +
-      '<span class="commit-msg">' + esc(c.message) + '</span>' +
-      '<span class="commit-meta">' + esc(c.author) + ' &middot; ' + relTime(c.date) + '</span>' +
-      '</div>'
-    ).join('')
+    list.innerHTML = data.commits.map(c => {
+      const dateMismatch = c.date !== c.committerDate
+      const warn = dateMismatch ? '<span class="commit-warn" title="Author date and committer date differ">&#9888;</span>' : ''
+      return '<div class="commit-row">' +
+        '<code class="commit-hash" data-full="' + c.fullHash + '" title="Click to copy">' + c.hash + COPY_ICON + '</code>' +
+        '<span class="commit-msg">' + esc(c.message) + '</span>' +
+        '<span class="commit-meta">' + esc(c.author) + ' &middot; ' + relTime(c.date) + warn + '</span>' +
+        '</div>'
+    }).join('')
     bindCopyHandlers(list)
     bindCommitClickHandlers(list)
+    bindWarnTooltips(list)
   }
 
   const pag = document.getElementById('pagination')!
@@ -159,6 +166,8 @@ interface CommitDetailData {
   committer: string
   committerDate: string
   stats: string
+  editable: boolean
+  reason?: string
 }
 
 const modalOverlay = document.getElementById('modalOverlay')!
@@ -188,19 +197,63 @@ function colorizeSummary(line: string): string {
     .replace(/(\d+ deletions?\(-\))/, '<span class="stat-del">$1</span>')
 }
 
+const EDIT_ICON = '<svg class="edit-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z"/></svg>'
+
+let currentModalHash = ''
+
 function renderModal(d: CommitDetailData): void {
+  currentModalHash = d.fullHash
   const bodyHtml = d.body ? '<div class="modal-body">' + esc(d.body).replace(/\n/g, '<br>') + '</div>' : ''
   const statsLines = d.stats.split('\n')
   const summary = statsLines[statsLines.length - 1] || ''
   const files = statsLines.slice(0, -1)
 
-  let html = '<div class="modal-header">'
+  // Build fullMessage for editing (subject + body)
+  const fullMessage = d.body ? d.subject + '\n\n' + d.body : d.subject
+
+  let html = ''
+  if (!d.editable && d.reason) {
+    html += '<div class="modal-edit-notice"><span class="dirty-icon">&#9888;</span>' + esc(d.reason) + '</div>'
+  }
+  if (d.committerDate !== d.authorDate) {
+    html += '<div class="modal-edit-notice"><span class="dirty-icon">&#9888;</span>Author date and committer date differ. This commit may have been amended or rebased.</div>'
+  }
+  html += '<div class="modal-header">'
   html += '<code class="modal-hash" data-full="' + d.fullHash + '" title="Click to copy">' + d.fullHash + COPY_ICON + '</code>'
   html += '</div>'
+  html += '<div class="modal-subject-row">'
   html += '<div class="modal-subject">' + esc(d.subject) + '</div>'
+  if (d.editable) {
+    html += '<button class="rename-btn" id="renameBtn" title="Rename commit message">' + EDIT_ICON + '</button>'
+  }
+  html += '</div>'
+  if (d.editable) {
+    html += '<div class="rename-form" id="renameForm" style="display:none">'
+    html += '<textarea class="rename-input" id="renameInput" rows="3">' + esc(fullMessage) + '</textarea>'
+    html += '<div class="rename-actions">'
+    html += '<button class="rename-cancel" id="renameCancel">Cancel</button>'
+    html += '<button class="rename-save" id="renameSave">Rename</button>'
+    html += '</div>'
+    html += '<div class="rename-error" id="renameError"></div>'
+    html += '</div>'
+  }
   html += bodyHtml
   html += '<div class="modal-meta">'
-  html += '<div class="modal-meta-row"><span class="modal-meta-label">Author</span> ' + esc(d.author) + ',&ensp;' + relTime(d.authorDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.authorDate) + ')</span></div>'
+  html += '<div class="modal-meta-row"><span class="modal-meta-label">Author</span> ' + esc(d.author) + ',&ensp;' + relTime(d.authorDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.authorDate) + ')</span>'
+  if (d.editable) {
+    html += ' <button class="date-edit-btn" id="dateEditBtn" title="Change commit date">' + EDIT_ICON + '</button>'
+  }
+  html += '</div>'
+  if (d.editable) {
+    html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
+    html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" value="' + d.authorDate.slice(0, 16) + '">'
+    html += '<div class="rename-actions">'
+    html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
+    html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
+    html += '</div>'
+    html += '<div class="rename-error" id="dateEditError"></div>'
+    html += '</div>'
+  }
   if (d.committer !== d.author || d.committerDate !== d.authorDate) {
     html += '<div class="modal-meta-row"><span class="modal-meta-label">Committer</span> ' + esc(d.committer) + ',&ensp;' + relTime(d.committerDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.committerDate) + ')</span></div>'
   }
@@ -227,6 +280,119 @@ function renderModal(d: CommitDetailData): void {
         hashEl.innerHTML = original
         hashEl.classList.remove('hash-copied')
       }, 1500)
+    })
+  }
+
+  // Bind rename handlers
+  const renameBtn = document.getElementById('renameBtn')
+  const renameForm = document.getElementById('renameForm')
+  const renameInput = document.getElementById('renameInput') as HTMLTextAreaElement | null
+  const renameCancel = document.getElementById('renameCancel')
+  const renameSave = document.getElementById('renameSave')
+  const renameError = document.getElementById('renameError')
+  const subjectEl = modalContent.querySelector<HTMLElement>('.modal-subject')
+  const bodyEl = modalContent.querySelector<HTMLElement>('.modal-body')
+
+  if (renameBtn && renameForm && renameInput) {
+    renameBtn.addEventListener('click', () => {
+      renameForm.style.display = 'block'
+      renameBtn.style.display = 'none'
+      if (subjectEl) subjectEl.style.display = 'none'
+      if (bodyEl) bodyEl.style.display = 'none'
+      // Auto-size textarea to fit content
+      renameInput.style.height = 'auto'
+      renameInput.style.height = renameInput.scrollHeight + 'px'
+      renameInput.focus()
+      renameInput.setSelectionRange(renameInput.value.length, renameInput.value.length)
+    })
+
+    renameCancel?.addEventListener('click', () => {
+      renameForm.style.display = 'none'
+      renameBtn.style.display = ''
+      if (subjectEl) subjectEl.style.display = ''
+      if (bodyEl) bodyEl.style.display = ''
+      if (renameError) renameError.textContent = ''
+    })
+
+    renameSave?.addEventListener('click', async () => {
+      const newMsg = renameInput.value.trim()
+      if (!newMsg) return
+      renameSave.setAttribute('disabled', 'true')
+      renameSave.textContent = 'Renaming...'
+      if (renameError) renameError.textContent = ''
+      reloadSuppressed = true
+      try {
+        const res = await fetch('/api/commit/' + currentModalHash, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: newMsg })
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to rename')
+        }
+        // Reload the modal with fresh data and refresh commits
+        reloadSuppressed = false
+        closeModal()
+        loadCommits(currentPage)
+      } catch (err) {
+        if (renameError) renameError.textContent = (err as Error).message
+        renameSave.removeAttribute('disabled')
+        renameSave.textContent = 'Rename'
+        // Keep reload suppressed briefly so delayed SSE events don't close the modal
+        setTimeout(() => { reloadSuppressed = false }, 2000)
+      }
+    })
+  }
+
+  // Bind date edit handlers
+  const dateEditBtn = document.getElementById('dateEditBtn')
+  const dateEditForm = document.getElementById('dateEditForm')
+  const dateEditInput = document.getElementById('dateEditInput') as HTMLInputElement | null
+  const dateEditCancel = document.getElementById('dateEditCancel')
+  const dateEditSave = document.getElementById('dateEditSave')
+  const dateEditError = document.getElementById('dateEditError')
+
+  if (dateEditBtn && dateEditForm && dateEditInput) {
+    dateEditBtn.addEventListener('click', () => {
+      dateEditForm.style.display = 'block'
+      dateEditBtn.style.display = 'none'
+      dateEditInput.focus()
+    })
+
+    dateEditCancel?.addEventListener('click', () => {
+      dateEditForm.style.display = 'none'
+      dateEditBtn.style.display = ''
+      if (dateEditError) dateEditError.textContent = ''
+    })
+
+    dateEditSave?.addEventListener('click', async () => {
+      const newDate = dateEditInput.value
+      if (!newDate) return
+      dateEditSave.setAttribute('disabled', 'true')
+      dateEditSave.textContent = 'Saving...'
+      if (dateEditError) dateEditError.textContent = ''
+      reloadSuppressed = true
+      try {
+        const isoDate = new Date(newDate).toISOString()
+        const res = await fetch('/api/commit/' + currentModalHash, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ date: isoDate })
+        })
+        if (!res.ok) {
+          const data = await res.json()
+          throw new Error(data.error || 'Failed to update date')
+        }
+        reloadSuppressed = false
+        closeModal()
+        loadCommits(currentPage)
+      } catch (err) {
+        if (dateEditError) dateEditError.textContent = (err as Error).message
+        dateEditSave.removeAttribute('disabled')
+        dateEditSave.textContent = 'Save Date'
+        setTimeout(() => { reloadSuppressed = false }, 2000)
+      }
     })
   }
 }
@@ -268,6 +434,20 @@ function bindCommitClickHandlers(container: HTMLElement): void {
     const handler = () => showCommitDetail(fullHash)
     msgEl?.addEventListener('click', handler)
     metaEl?.addEventListener('click', handler)
+  })
+}
+
+function bindWarnTooltips(container: HTMLElement): void {
+  container.querySelectorAll<HTMLElement>('.commit-warn').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      tooltip.textContent = 'Author date and committer date differ'
+      tooltip.classList.add('visible')
+    })
+    el.addEventListener('mousemove', e => {
+      tooltip.style.left = e.clientX + 12 + 'px'
+      tooltip.style.top = e.clientY - 36 + 'px'
+    })
+    el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
   })
 }
 
