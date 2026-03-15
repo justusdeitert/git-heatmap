@@ -451,4 +451,50 @@ function bindWarnTooltips(container: HTMLElement): void {
   })
 }
 
+// --- Reflog traces ---
+
+const clearTracesBtn = document.getElementById('clearTracesBtn')
+const confirmOverlay = document.getElementById('confirmOverlay')!
+const confirmCancel = document.getElementById('confirmCancel')!
+const confirmOk = document.getElementById('confirmOk')!
+const confirmError = document.getElementById('confirmError')!
+
+function closeConfirm(): void {
+  confirmError.textContent = ''
+  confirmOverlay.classList.remove('visible')
+}
+
+confirmCancel.addEventListener('click', closeConfirm)
+confirmOverlay.addEventListener('click', e => {
+  if (e.target === confirmOverlay) closeConfirm()
+})
+
+if (clearTracesBtn) {
+  clearTracesBtn.addEventListener('click', () => {
+    confirmError.textContent = ''
+    confirmOverlay.classList.add('visible')
+  })
+}
+
+confirmOk.addEventListener('click', async () => {
+  confirmError.textContent = ''
+  confirmOk.setAttribute('disabled', 'true')
+  confirmOk.textContent = 'Clearing...'
+  try {
+    const res = await fetch('/api/reflog', { method: 'DELETE' })
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Failed to clear')
+    }
+    closeConfirm()
+    const card = document.querySelector('.trace-card')
+    if (card) card.remove()
+  } catch (err) {
+    confirmError.textContent = 'Failed to clear traces: ' + (err as Error).message
+  } finally {
+    confirmOk.removeAttribute('disabled')
+    confirmOk.textContent = 'Clear traces'
+  }
+})
+
 loadCommits(1)

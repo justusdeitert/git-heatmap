@@ -34,6 +34,13 @@ export interface RecentCommit {
   committerDate: string
 }
 
+export interface ReflogTrace {
+  hash: string
+  action: string
+  detail: string
+  date: string
+}
+
 export interface DashboardData {
   repoName: string
   remoteUrl: string | null
@@ -45,4 +52,5 @@ export interface DashboardData {
   firstCommit: string | null
   recentCommits: RecentCommit[]
   dirty: boolean
+  traces: ReflogTrace[]
 }

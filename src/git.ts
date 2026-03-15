@@ -1,9 +1,15 @@
-import { execSync } from 'node:child_process'
+import { exec, execSync } from 'node:child_process'
 import { writeFileSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim()
+const execAsync = (cmd: string): Promise<void> => new Promise((resolve, reject) => {
+  exec(cmd, (err) => {
+    if (err) reject(err)
+    else resolve()
+  })
+})
 
 export function isInsideRepo(): boolean {
   try {
@@ -236,4 +242,39 @@ export function rewriteCommitDate(hash: string, newDate: string): void {
     try { execSync('git rebase --abort', { stdio: 'pipe' }) } catch { /* ignore */ }
     throw err
   }
+}
+
+export interface ReflogEntry {
+  hash: string
+  action: string
+  detail: string
+  date: string
+}
+
+const TRACE_ACTIONS = /^(rebase|commit \(amend\)|reset|cherry-pick|revert)/
+
+export function getReflogTraces(): ReflogEntry[] {
+  const sep = '---GD---'
+  try {
+    const raw = git(`git reflog --date=iso-strict --format="%h${sep}%gs${sep}%gD"`)
+    if (!raw) return []
+    return raw.split('\n').filter(Boolean)
+      .map(line => {
+        const [hash, gs, selector] = line.split(sep)
+        const colonIdx = gs.indexOf(': ')
+        const action = colonIdx >= 0 ? gs.slice(0, colonIdx) : gs
+        const detail = colonIdx >= 0 ? gs.slice(colonIdx + 2) : ''
+        const dateMatch = selector?.match(/@\{(.+)\}$/)
+        const date = dateMatch?.[1] ?? ''
+        return { hash, action, detail, date }
+      })
+      .filter(e => TRACE_ACTIONS.test(e.action))
+  } catch {
+    return []
+  }
+}
+
+export async function clearReflog(): Promise<void> {
+  await execAsync('git reflog expire --expire=now --all')
+  await execAsync('git gc --prune=now')
 }

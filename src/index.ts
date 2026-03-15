@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, rewriteCommitMessage, rewriteCommitDate } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -44,8 +44,9 @@ function buildDashboard(): string {
   const stats = computeStats(commitMap, dates.length)
   const recentCommits = getRecentCommits()
   const dirty = hasUncommittedChanges()
+  const traces = getReflogTraces()
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty })
+  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty, traces })
 }
 
 // --- SSE live-reload ---
@@ -197,6 +198,24 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
+    return
+  }
+
+  if (parsed.pathname === '/api/reflog' && req.method === 'DELETE') {
+    clearReflog().then(() => {
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ ok: true }))
+    }).catch((err) => {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    })
+    return
+  }
+
+  if (parsed.pathname === '/api/reflog' && req.method === 'GET') {
+    const traces = getReflogTraces()
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify({ traces }))
     return
   }
 

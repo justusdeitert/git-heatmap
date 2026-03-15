@@ -569,4 +569,127 @@ footer a { color: var(--accent); text-decoration: none; }
 .dirty-icon {
   font-size: 16px;
 }
+
+.trace-card .card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.trace-count {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.trace-clear-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(210, 153, 34, 0.4);
+  border-radius: 6px;
+  color: #d29922;
+  font-size: 12px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.trace-clear-btn:hover {
+  background: rgba(210, 153, 34, 0.12);
+}
+.trace-clear-btn[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.trace-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.trace-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.trace-row:last-child {
+  border-bottom: none;
+}
+.trace-hash {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.trace-action {
+  background: rgba(210, 153, 34, 0.1);
+  color: #d29922;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.trace-detail {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+.trace-date {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.confirm-modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90vw;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.confirm-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.confirm-body {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.confirm-error {
+  color: #f47067;
+  font-size: 12px;
+  min-height: 18px;
+  margin-bottom: 10px;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.confirm-delete {
+  background: #da3633;
+  color: #fff;
+  border: 1px solid #da3633;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.confirm-delete:hover {
+  opacity: .85;
+}
+.confirm-delete[disabled] {
+  opacity: .5;
+  cursor: not-allowed;
+}
 `
