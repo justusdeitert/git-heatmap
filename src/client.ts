@@ -3,14 +3,19 @@
 
 const tooltip = document.getElementById('tooltip')!
 
+function positionTooltipLeftOfCursor(e: MouseEvent): void {
+  const x = Math.max(8, e.clientX - tooltip.offsetWidth - 12)
+  tooltip.style.left = x + 'px'
+  tooltip.style.top = e.clientY - 36 + 'px'
+}
+
 document.querySelectorAll<HTMLElement>('.day').forEach(el => {
   el.addEventListener('mouseenter', () => {
     tooltip.textContent = el.dataset.tooltip ?? ''
     tooltip.classList.add('visible')
   })
   el.addEventListener('mousemove', e => {
-    tooltip.style.left = e.clientX + 12 + 'px'
-    tooltip.style.top = e.clientY - 36 + 'px'
+    positionTooltipLeftOfCursor(e)
   })
   el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
   el.addEventListener('click', () => {
@@ -461,8 +466,7 @@ function bindWarnTooltips(container: HTMLElement): void {
       tooltip.classList.add('visible')
     })
     el.addEventListener('mousemove', e => {
-      tooltip.style.left = e.clientX + 12 + 'px'
-      tooltip.style.top = e.clientY - 36 + 'px'
+      positionTooltipLeftOfCursor(e)
     })
     el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
   })
