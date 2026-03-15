@@ -164,7 +164,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
       </div>
     </div>
     <div class="card">
-      <div class="card-title">${icons.gitCommit} Commits <span class="commit-count" id="commitCount"></span></div>
+      <div class="card-title">${icons.gitCommit} Commits <span class="commit-count" id="commitCount"></span> <span id="dateFilter"></span></div>
       <div class="commit-list" id="commitList">${commitList(recentCommits)}</div>
       <div class="pagination" id="pagination"></div>
     </div>

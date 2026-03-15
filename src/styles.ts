@@ -105,6 +105,7 @@ h1 span { color: var(--text-muted); font-weight: 400; }
 }
 
 .day:hover { stroke: var(--text-muted); stroke-width: 2; }
+.day-selected { stroke: var(--accent); stroke-width: 2; }
 
 .level-0 { fill: var(--level-0); }
 .level-1 { fill: var(--level-1); }
@@ -190,6 +191,33 @@ h1 span { color: var(--text-muted); font-weight: 400; }
   color: var(--text-muted);
   white-space: nowrap;
 }
+
+.filter-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--accent);
+  background: rgba(88,166,255,0.1);
+  border: 1px solid rgba(88,166,255,0.3);
+  border-radius: 12px;
+  padding: 2px 8px 2px 10px;
+  margin-left: 8px;
+}
+
+.filter-clear {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+
+.filter-clear:hover { color: var(--text); }
 
 .commit-empty { padding: 16px 0; color: var(--text-muted); font-size: 13px; }
 

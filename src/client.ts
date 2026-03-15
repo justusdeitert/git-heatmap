@@ -13,6 +13,15 @@ document.querySelectorAll<HTMLElement>('.day').forEach(el => {
     tooltip.style.top = e.clientY - 36 + 'px'
   })
   el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
+  el.addEventListener('click', () => {
+    const date = el.dataset.date
+    if (!date) return
+    if (activeDate === date) {
+      clearDateFilter()
+    } else {
+      filterByDate(date)
+    }
+  })
 })
 
 new EventSource('/events').addEventListener('message', () => location.reload())
@@ -38,6 +47,34 @@ function bindCopyHandlers(container: HTMLElement): void {
 }
 
 let currentPage = 1
+let activeDate: string | null = null
+
+function filterByDate(date: string): void {
+  activeDate = date
+  document.querySelectorAll<HTMLElement>('.day').forEach(d => {
+    d.classList.toggle('day-selected', d.dataset.date === date)
+  })
+  updateFilterBadge()
+  loadCommits(1).then(scrollToCommits)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- called from inline onclick
+function clearDateFilter(): void {
+  activeDate = null
+  document.querySelectorAll<HTMLElement>('.day-selected').forEach(d => d.classList.remove('day-selected'))
+  updateFilterBadge()
+  loadCommits(1)
+}
+
+function updateFilterBadge(): void {
+  const badge = document.getElementById('dateFilter')!
+  if (activeDate) {
+    const formatted = new Date(activeDate + 'T12:00:00').toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })
+    badge.innerHTML = '<span class="filter-badge">' + formatted + ' <button class="filter-clear" onclick="clearDateFilter()">&times;</button></span>'
+  } else {
+    badge.innerHTML = ''
+  }
+}
 
 function relTime(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
@@ -72,7 +109,9 @@ interface CommitResponse {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- called from inline onclick handlers
 async function loadCommits(page: number): Promise<void> {
-  const res = await fetch('/api/commits?page=' + page)
+  let url = '/api/commits?page=' + page
+  if (activeDate) url += '&date=' + activeDate
+  const res = await fetch(url)
   const data: CommitResponse = await res.json()
   currentPage = data.page
 
@@ -100,6 +139,11 @@ async function loadCommits(page: number): Promise<void> {
   html += '<span class="pag-info">Page ' + page + ' of ' + data.totalPages + '</span>'
   html += '<button class="pag-btn" ' + (page >= data.totalPages ? 'disabled' : '') + ' onclick="loadCommits(' + (page + 1) + ')">&rarr;</button>'
   pag.innerHTML = html
+}
+
+// Scroll to commits panel when filtering
+function scrollToCommits(): void {
+  document.getElementById('commitList')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
 }
 
 loadCommits(1)

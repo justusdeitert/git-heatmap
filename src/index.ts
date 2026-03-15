@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -89,9 +89,20 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
   if (parsed.pathname === '/api/commits') {
     const page = Math.max(1, parseInt(parsed.searchParams.get('page') ?? '1', 10) || 1)
+    const date = parsed.searchParams.get('date')
     const perPage = 20
-    const total = getCommitCount()
-    const commits = getRecentCommits(perPage, (page - 1) * perPage)
+
+    let total: number
+    let commits: ReturnType<typeof getRecentCommits>
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const all = getCommitsByDate(date)
+      total = all.length
+      commits = all.slice((page - 1) * perPage, page * perPage)
+    } else {
+      total = getCommitCount()
+      commits = getRecentCommits(perPage, (page - 1) * perPage)
+    }
+
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
     return

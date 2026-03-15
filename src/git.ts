@@ -76,3 +76,20 @@ export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
     return { hash, fullHash, message, author, date }
   })
 }
+
+export function getCommitsByDate(date: string): RawCommit[] {
+  const sep = '---GD---'
+  const d = new Date(date + 'T12:00:00')
+  const prev = new Date(d); prev.setDate(prev.getDate() - 2)
+  const next = new Date(d); next.setDate(next.getDate() + 2)
+  const after = prev.toISOString().slice(0, 10)
+  const before = next.toISOString().slice(0, 10)
+  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI" --after="${after}" --before="${before}"`)
+  if (!raw) return []
+  return raw.split('\n').filter(Boolean)
+    .map(line => {
+      const [hash, fullHash, message, author, d] = line.split(sep)
+      return { hash, fullHash, message, author, date: d }
+    })
+    .filter(c => c.date.startsWith(date))
+}
