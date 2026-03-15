@@ -1,0 +1,31 @@
+{
+  "name": "git-dashboard",
+  "version": "0.1.0",
+  "description": "Beautiful live git dashboard with commit heatmap",
+  "type": "module",
+  "bin": {
+    "git-dashboard": "./dist/index.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "tsc"
+  },
+  "keywords": [
+    "git",
+    "dashboard",
+    "heatmap",
+    "commits",
+    "cli"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.8.2"
+  },
+  "license": "MIT"
+}
