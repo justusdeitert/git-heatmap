@@ -1,6 +1,6 @@
 import * as icons from './icons.js'
 import { CSS } from './styles.js'
-import type { DashboardData, MonthLabel, Stats, Week } from './types.js'
+import type { DashboardData, MonthLabel, RecentCommit, Stats, Week } from './types.js'
 
 // --- SVG layout constants ---
 
@@ -87,6 +87,29 @@ const LEGEND_SVG = `
     <rect x="60" y="0" width="12" height="12" rx="2" class="level-4"/>
   </svg>`
 
+function relativeTime(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+  if (seconds < 60) return 'just now'
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  const months = Math.floor(days / 30)
+  return `${months}mo ago`
+}
+
+function commitList(commits: RecentCommit[]): string {
+  if (commits.length === 0) return '<div class="commit-empty">No commits found</div>'
+  return commits.map(c => `
+    <div class="commit-row">
+      <code class="commit-hash">${c.hash}</code>
+      <span class="commit-msg">${c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+      <span class="commit-meta">${c.author} &middot; ${relativeTime(c.date)}</span>
+    </div>`).join('')
+}
+
 const CLIENT_JS = `
   const t = document.getElementById('tooltip');
   document.querySelectorAll('.day').forEach(el => {
@@ -98,7 +121,9 @@ const CLIENT_JS = `
 
 // --- Page template ---
 
-export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit }: DashboardData): string {
+const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%230d1117'/><rect x='2' y='2' width='4' height='4' rx='1' fill='%2339d353'/><rect x='6' y='6' width='4' height='4' rx='1' fill='%2326a641'/><rect x='10' y='10' width='4' height='4' rx='1' fill='%23006d32'/><rect x='2' y='10' width='4' height='4' rx='1' fill='%230e4429'/></svg>">`
+
+export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits }: DashboardData): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP)
   const svgHeight = HEADER_H + 7 * (CELL + GAP)
   const now = new Date().toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -109,6 +134,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${repoName} — Git Dashboard</title>
+  ${FAVICON}
   <style>${CSS}</style>
 </head>
 <body>
@@ -139,6 +165,10 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
         <div class="meta-item">${icons.dot} ${remoteUrl ?? '<span style="color:var(--accent)">No remote</span>'}</div>
         <div class="meta-item">${icons.dot} Generated: ${now}</div>
       </div>
+    </div>
+    <div class="card">
+      <div class="card-title">${icons.gitCommit} Recent Commits</div>
+      <div class="commit-list">${commitList(recentCommits)}</div>
     </div>
   </div>
 

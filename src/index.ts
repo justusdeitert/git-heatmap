@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -42,8 +42,9 @@ function buildDashboard(): string {
   const weeks = buildCalendarWeeks(commitMap)
   const monthLabels = getMonthLabels(weeks)
   const stats = computeStats(commitMap, dates.length)
+  const recentCommits = getRecentCommits()
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit })
+  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits })
 }
 
 // --- SSE live-reload ---

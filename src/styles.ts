@@ -90,7 +90,8 @@ h1 span { color: var(--text-muted); font-weight: 400; }
   margin-bottom: 16px;
 }
 
-.card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+.card-title { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.card-title svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
 .heatmap-scroll { overflow-x: auto; }
 .heatmap-scroll svg { display: block; }
 .month-label { font-size: 10px; fill: var(--text-muted); }
@@ -143,6 +144,40 @@ h1 span { color: var(--text-muted); font-weight: 400; }
 .meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
 .meta-item { display: flex; align-items: center; gap: 4px; }
 .meta-item svg { width: 14px; height: 14px; }
+
+.commit-list { max-height: 420px; overflow-y: auto; }
+
+.commit-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.commit-row:last-child { border-bottom: none; }
+
+.commit-hash {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.commit-msg {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.commit-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.commit-empty { padding: 16px 0; color: var(--text-muted); font-size: 13px; }
 
 footer { text-align: center; padding: 24px 0; font-size: 11px; color: var(--text-muted); }
 footer a { color: var(--accent); text-decoration: none; }

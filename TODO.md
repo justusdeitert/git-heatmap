@@ -5,14 +5,14 @@
 - [ ] **Commit activity chart** — bar/sparkline showing commits per week/month (trend view alongside heatmap)
 - [ ] **Top authors table** — contributor names with commit counts, mini leaderboard
 - [ ] **Branch list** — active branches with last commit date
-- [ ] **Favicon** — inline SVG favicon for a polished browser tab
+- [x] **Favicon** — inline SVG favicon for a polished browser tab
 
 ## Medium effort
 
 - [ ] **File change heatmap** — most-changed files/directories (tree map or ranked list via `git log --name-only`)
 - [ ] **Time-of-day chart** — when commits happen (morning/afternoon/night distribution)
 - [ ] **Day-of-week chart** — which weekdays are most active
-- [ ] **Commit messages panel** — recent commits list with relative timestamps
+- [x] **Commit messages panel** — recent commits list with relative timestamps
 
 ## Bigger features
 

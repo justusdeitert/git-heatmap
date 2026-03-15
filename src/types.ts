@@ -25,6 +25,13 @@ export interface Stats {
   busiestCount: number
 }
 
+export interface RecentCommit {
+  hash: string
+  message: string
+  author: string
+  date: string
+}
+
 export interface DashboardData {
   repoName: string
   remoteUrl: string | null
@@ -34,4 +41,5 @@ export interface DashboardData {
   authors: number
   branch: string
   firstCommit: string | null
+  recentCommits: RecentCommit[]
 }

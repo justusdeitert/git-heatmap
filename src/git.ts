@@ -53,3 +53,20 @@ export function getAuthorCount(): number {
 export function getCurrentBranch(): string {
   return git('git branch --show-current')
 }
+
+export interface RawCommit {
+  hash: string
+  message: string
+  author: string
+  date: string
+}
+
+export function getRecentCommits(count = 20): RawCommit[] {
+  const sep = '---GD---'
+  const raw = git(`git log --no-merges --format="%h${sep}%s${sep}%an${sep}%aI" -${count}`)
+  if (!raw) return []
+  return raw.split('\n').filter(Boolean).map(line => {
+    const [hash, message, author, date] = line.split(sep)
+    return { hash, message, author, date }
+  })
+}
