@@ -178,7 +178,7 @@ const modalClose = document.getElementById('modalClose')!
 
 function formatFullDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en', {
-    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
   })
 }
 
@@ -250,7 +250,7 @@ function renderModal(d: CommitDetailData): void {
   if (!showCommitterRow && d.editable) {
     html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
     html += '<div class="date-edit-row">'
-    html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" value="' + d.authorDate.slice(0, 16) + '">'
+    html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + d.authorDate.slice(0, 19) + '">'
     html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
     html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
     html += '</div>'
@@ -266,7 +266,7 @@ function renderModal(d: CommitDetailData): void {
     if (d.editable) {
       html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
       html += '<div class="date-edit-row">'
-      html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" value="' + d.authorDate.slice(0, 16) + '">'
+      html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + d.authorDate.slice(0, 19) + '">'
       html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
       html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
       html += '</div>'
