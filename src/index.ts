@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML } from './html.js'
 import { parseArgs } from './args.js'
@@ -87,6 +87,20 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
   }
 
   const parsed = new URL(req.url ?? '/', `http://${req.headers.host}`)
+
+  const commitMatch = parsed.pathname.match(/^\/api\/commit\/([a-f0-9]+)$/)
+  if (commitMatch) {
+    const detail = getCommitDetail(commitMatch[1])
+    if (!detail) {
+      res.writeHead(404, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'Commit not found' }))
+      return
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify(detail))
+    return
+  }
+
   if (parsed.pathname === '/api/commits') {
     const page = Math.max(1, parseInt(parsed.searchParams.get('page') ?? '1', 10) || 1)
     const date = parsed.searchParams.get('date')

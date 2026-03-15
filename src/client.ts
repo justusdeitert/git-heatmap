@@ -130,6 +130,7 @@ async function loadCommits(page: number): Promise<void> {
       '</div>'
     ).join('')
     bindCopyHandlers(list)
+    bindCommitClickHandlers(list)
   }
 
   const pag = document.getElementById('pagination')!
@@ -144,6 +145,130 @@ async function loadCommits(page: number): Promise<void> {
 // Scroll to commits panel when filtering
 function scrollToCommits(): void {
   document.getElementById('commitList')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+}
+
+// --- Commit detail modal ---
+
+interface CommitDetailData {
+  hash: string
+  fullHash: string
+  subject: string
+  body: string
+  author: string
+  authorDate: string
+  committer: string
+  committerDate: string
+  stats: string
+}
+
+const modalOverlay = document.getElementById('modalOverlay')!
+const modalContent = document.getElementById('modalContent')!
+const modalClose = document.getElementById('modalClose')!
+
+function formatFullDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en', {
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  })
+}
+
+function colorizeStatLine(line: string): string {
+  const escaped = esc(line)
+  // Match: filename | count ++++----
+  const match = escaped.match(/^(.+?)(\|)(\s*\d+\s*)(.*?)$/)
+  if (!match) return '<span class="stat-summary">' + escaped + '</span>'
+  const [, file, pipe, count, bar] = match
+  const coloredBar = bar.replace(/(\++|-+)/g, (m) => m[0] === '+' ? '<span class="stat-add">' + m + '</span>' : '<span class="stat-del">' + m + '</span>')
+  return '<span class="stat-filename">' + file + '</span>' + pipe + '<span class="stat-count">' + count + '</span>' + coloredBar
+}
+
+function colorizeSummary(line: string): string {
+  return esc(line)
+    .replace(/(\d+ files? changed)/, '<span class="stat-summary">$1</span>')
+    .replace(/(\d+ insertions?\(\+\))/, '<span class="stat-add">$1</span>')
+    .replace(/(\d+ deletions?\(-\))/, '<span class="stat-del">$1</span>')
+}
+
+function renderModal(d: CommitDetailData): void {
+  const bodyHtml = d.body ? '<div class="modal-body">' + esc(d.body).replace(/\n/g, '<br>') + '</div>' : ''
+  const statsLines = d.stats.split('\n')
+  const summary = statsLines[statsLines.length - 1] || ''
+  const files = statsLines.slice(0, -1)
+
+  let html = '<div class="modal-header">'
+  html += '<code class="modal-hash" data-full="' + d.fullHash + '" title="Click to copy">' + d.fullHash + COPY_ICON + '</code>'
+  html += '</div>'
+  html += '<div class="modal-subject">' + esc(d.subject) + '</div>'
+  html += bodyHtml
+  html += '<div class="modal-meta">'
+  html += '<div class="modal-meta-row"><span class="modal-meta-label">Author</span> ' + esc(d.author) + ',&ensp;' + relTime(d.authorDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.authorDate) + ')</span></div>'
+  if (d.committer !== d.author || d.committerDate !== d.authorDate) {
+    html += '<div class="modal-meta-row"><span class="modal-meta-label">Committer</span> ' + esc(d.committer) + ',&ensp;' + relTime(d.committerDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.committerDate) + ')</span></div>'
+  }
+  html += '</div>'
+  if (files.length > 0) {
+    html += '<div class="modal-stats">'
+    html += '<div class="modal-stats-summary">' + colorizeSummary(summary.trim()) + '</div>'
+    html += '<div class="modal-files">' + files.map(f => '<div class="modal-file">' + colorizeStatLine(f.trim()) + '</div>').join('') + '</div>'
+    html += '</div>'
+  }
+  modalContent.innerHTML = html
+
+  // Bind copy on modal hash
+  const hashEl = modalContent.querySelector<HTMLElement>('.modal-hash')
+  if (hashEl) {
+    hashEl.addEventListener('click', async () => {
+      const full = hashEl.dataset.full
+      if (!full) return
+      await navigator.clipboard.writeText(full)
+      const original = hashEl.innerHTML
+      hashEl.innerHTML = hashEl.textContent + ' ' + CHECK_ICON
+      hashEl.classList.add('hash-copied')
+      setTimeout(() => {
+        hashEl.innerHTML = original
+        hashEl.classList.remove('hash-copied')
+      }, 1500)
+    })
+  }
+}
+
+async function showCommitDetail(fullHash: string): Promise<void> {
+  modalContent.innerHTML = '<div class="modal-loading">Loading...</div>'
+  modalOverlay.classList.add('visible')
+  document.body.style.overflow = 'hidden'
+  try {
+    const res = await fetch('/api/commit/' + fullHash)
+    if (!res.ok) throw new Error('Not found')
+    const data: CommitDetailData = await res.json()
+    renderModal(data)
+  } catch {
+    modalContent.innerHTML = '<div class="modal-loading">Failed to load commit details</div>'
+  }
+}
+
+function closeModal(): void {
+  modalOverlay.classList.remove('visible')
+  document.body.style.overflow = ''
+}
+
+modalClose.addEventListener('click', closeModal)
+modalOverlay.addEventListener('click', e => {
+  if (e.target === modalOverlay) closeModal()
+})
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal()
+})
+
+function bindCommitClickHandlers(container: HTMLElement): void {
+  container.querySelectorAll<HTMLElement>('.commit-row').forEach(row => {
+    const msgEl = row.querySelector<HTMLElement>('.commit-msg')
+    const metaEl = row.querySelector<HTMLElement>('.commit-meta')
+    const hashEl = row.querySelector<HTMLElement>('.commit-hash')
+    const fullHash = hashEl?.dataset.full
+    if (!fullHash) return
+    const handler = () => showCommitDetail(fullHash)
+    msgEl?.addEventListener('click', handler)
+    metaEl?.addEventListener('click', handler)
+  })
 }
 
 loadCommits(1)

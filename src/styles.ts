@@ -184,12 +184,19 @@ h1 span { color: var(--text-muted); font-weight: 400; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 1px 4px;
+  transition: color 0.15s;
 }
+
+.commit-msg:hover { color: var(--accent); }
 
 .commit-meta {
   font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .filter-badge {
@@ -253,4 +260,149 @@ h1 span { color: var(--text-muted); font-weight: 400; }
 
 footer { text-align: center; padding: 24px 0; font-size: 11px; color: var(--text-muted); }
 footer a { color: var(--accent); text-decoration: none; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  backdrop-filter: blur(2px);
+}
+
+.modal-overlay.visible { opacity: 1; pointer-events: auto; }
+
+.modal {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 640px;
+  width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+  transition: color 0.15s;
+}
+
+.modal-close:hover { color: var(--text); }
+
+.modal-header {
+  margin-bottom: 12px;
+}
+
+.modal-hash {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  color: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding: 2px 6px;
+  background: rgba(88,166,255,0.1);
+  transition: background 0.15s;
+}
+
+.modal-hash:hover { background: rgba(88,166,255,0.2); }
+.modal-hash.hash-copied { color: var(--level-3); }
+
+.modal-subject {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.modal-body {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  word-break: break-word;
+}
+
+.modal-meta {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.modal-meta-row {
+  padding: 4px 0;
+  line-height: 1.5;
+}
+
+.modal-meta-label {
+  color: var(--text-muted);
+  min-width: 80px;
+  display: inline-block;
+}
+
+.modal-meta-date {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.modal-stats {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.modal-stats-summary {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.modal-files {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.modal-file {
+  padding: 2px 0;
+  white-space: pre;
+}
+
+.stat-filename { color: var(--text); }
+.stat-count { color: var(--text-muted); }
+.stat-add { color: #56d364; }
+.stat-del { color: #f47067; }
+.stat-summary { color: var(--text-muted); }
+
+.modal-loading {
+  text-align: center;
+  padding: 32px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
 `

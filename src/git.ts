@@ -62,6 +62,18 @@ export interface RawCommit {
   date: string
 }
 
+export interface CommitDetail {
+  hash: string
+  fullHash: string
+  subject: string
+  body: string
+  author: string
+  authorDate: string
+  committer: string
+  committerDate: string
+  stats: string
+}
+
 export function getCommitCount(): number {
   const out = git('git rev-list --no-merges --count HEAD')
   return parseInt(out, 10) || 0
@@ -75,6 +87,29 @@ export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
     const [hash, fullHash, message, author, date] = line.split(sep)
     return { hash, fullHash, message, author, date }
   })
+}
+
+export function getCommitDetail(hash: string): CommitDetail | null {
+  const sep = '---GD---'
+  try {
+    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%aI${sep}%cn${sep}%cI" ${hash}`)
+    if (!raw) return null
+    const parts = raw.split(sep)
+    const stats = git(`git diff --stat ${hash}~1 ${hash} 2>/dev/null || git diff --stat --root ${hash}`)
+    return {
+      hash: parts[0],
+      fullHash: parts[1],
+      subject: parts[2],
+      body: parts[3].trim(),
+      author: parts[4],
+      authorDate: parts[5],
+      committer: parts[6],
+      committerDate: parts[7],
+      stats: stats.trim(),
+    }
+  } catch {
+    return null
+  }
 }
 
 export function getCommitsByDate(date: string): RawCommit[] {
