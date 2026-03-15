@@ -106,12 +106,30 @@ function openBrowser(url: string): void {
 
 // --- Start ---
 
-const PORT = args.port ?? parseInt(process.env.PORT ?? '3333', 10)
+const preferredPort = args.port ?? parseInt(process.env.PORT ?? '3333', 10)
+
+function startServer(port: number): void {
+  const server = createServer(handleRequest)
+
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      if (args.port) {
+        console.error(`Error: Port ${port} is already in use.`)
+        process.exit(1)
+      }
+      startServer(port + 1)
+    } else {
+      throw err
+    }
+  })
+
+  server.listen(port, '127.0.0.1', () => {
+    const url = `http://127.0.0.1:${port}`
+    console.log(`\n  ● Git Dashboard running at ${url}`)
+    console.log('  Live-reloads on git changes. Press Ctrl+C to stop.\n')
+    if (args.open) openBrowser(url)
+  })
+}
 
 watchGitDir()
-createServer(handleRequest).listen(PORT, '127.0.0.1', () => {
-  const url = `http://127.0.0.1:${PORT}`
-  console.log(`\n  ● Git Dashboard running at ${url}`)
-  console.log('  Live-reloads on git changes. Press Ctrl+C to stop.\n')
-  if (args.open) openBrowser(url)
-})
+startServer(preferredPort)
