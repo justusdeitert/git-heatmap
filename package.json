@@ -12,8 +12,8 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "prepublishOnly": "tsc"
+    "build": "tsc && tsc -p tsconfig.client.json",
+    "prepublishOnly": "tsc && tsc -p tsconfig.client.json"
   },
   "keywords": [
     "git",
