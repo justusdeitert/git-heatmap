@@ -241,23 +241,38 @@ function renderModal(d: CommitDetailData): void {
   }
   html += bodyHtml
   html += '<div class="modal-meta">'
+  const showCommitterRow = d.committer !== d.author || d.committerDate !== d.authorDate
   html += '<div class="modal-meta-row"><span class="modal-meta-label">Author</span> ' + esc(d.author) + ',&ensp;' + relTime(d.authorDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.authorDate) + ')</span>'
-  if (d.editable) {
+  if (d.editable && !showCommitterRow) {
     html += ' <button class="date-edit-btn" id="dateEditBtn" title="Change commit date">' + EDIT_ICON + '</button>'
   }
   html += '</div>'
-  if (d.editable) {
+  if (!showCommitterRow && d.editable) {
     html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
+    html += '<div class="date-edit-row">'
     html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" value="' + d.authorDate.slice(0, 16) + '">'
-    html += '<div class="rename-actions">'
     html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
     html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
     html += '</div>'
     html += '<div class="rename-error" id="dateEditError"></div>'
     html += '</div>'
   }
-  if (d.committer !== d.author || d.committerDate !== d.authorDate) {
-    html += '<div class="modal-meta-row"><span class="modal-meta-label">Committer</span> ' + esc(d.committer) + ',&ensp;' + relTime(d.committerDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.committerDate) + ')</span></div>'
+  if (showCommitterRow) {
+    html += '<div class="modal-meta-row"><span class="modal-meta-label">Committer</span> ' + esc(d.committer) + ',&ensp;' + relTime(d.committerDate) + ' <span class="modal-meta-date">(' + formatFullDate(d.committerDate) + ')</span>'
+    if (d.editable) {
+      html += ' <button class="date-edit-btn" id="dateEditBtn" title="Change commit date">' + EDIT_ICON + '</button>'
+    }
+    html += '</div>'
+    if (d.editable) {
+      html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
+      html += '<div class="date-edit-row">'
+      html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" value="' + d.authorDate.slice(0, 16) + '">'
+      html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
+      html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
+      html += '</div>'
+      html += '<div class="rename-error" id="dateEditError"></div>'
+      html += '</div>'
+    }
   }
   html += '</div>'
   if (files.length > 0) {

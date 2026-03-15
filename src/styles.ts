@@ -438,6 +438,12 @@ footer a { color: var(--accent); text-decoration: none; }
 .rename-form {
   margin: 8px 0 4px;
 }
+.date-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .rename-input {
   width: 100%;
   min-height: 56px;
@@ -518,6 +524,12 @@ footer a { color: var(--accent); text-decoration: none; }
 }
 .date-edit-form {
   margin: 6px 0 4px;
+}
+.date-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .date-edit-input {
   padding: 6px 10px;
