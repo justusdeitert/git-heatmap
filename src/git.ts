@@ -70,6 +70,7 @@ export interface RawCommit {
   author: string
   date: string
   committerDate: string
+  onRemote: boolean
 }
 
 export interface CommitDetail {
@@ -89,13 +90,47 @@ export function getCommitCount(): number {
   return parseInt(out, 10) || 0
 }
 
+const UNPUSHED_CACHE_TTL_MS = 1500
+let unpushedCacheAt = 0
+let unpushedCacheHead = ''
+let unpushedCacheValue: Set<string> | null = null
+
+function getUnpushedCommitSet(): Set<string> | null {
+  const now = Date.now()
+  const head = git('git rev-parse HEAD')
+  if (head === unpushedCacheHead && now - unpushedCacheAt < UNPUSHED_CACHE_TTL_MS) {
+    return unpushedCacheValue
+  }
+
+  try {
+    // Ensure current branch has an upstream; if not, treat commits as local-only.
+    execSync('git rev-parse --abbrev-ref --symbolic-full-name @{upstream}', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'],
+    })
+    const out = git('git rev-list --no-merges @{upstream}..HEAD')
+    const result = !out ? new Set<string>() : new Set(out.split('\n').filter(Boolean))
+    unpushedCacheAt = now
+    unpushedCacheHead = head
+    unpushedCacheValue = result
+    return result
+  } catch {
+    unpushedCacheAt = now
+    unpushedCacheHead = head
+    unpushedCacheValue = null
+    return null
+  }
+}
+
 export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
+  const unpushed = getUnpushedCommitSet()
   const sep = '---GD---'
   const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --skip=${skip} -${count}`)
   if (!raw) return []
   return raw.split('\n').filter(Boolean).map(line => {
     const [hash, fullHash, message, author, date, committerDate] = line.split(sep)
-    return { hash, fullHash, message, author, date, committerDate }
+    const onRemote = unpushed ? !unpushed.has(fullHash) : false
+    return { hash, fullHash, message, author, date, committerDate, onRemote }
   })
 }
 
@@ -123,6 +158,7 @@ export function getCommitDetail(hash: string): CommitDetail | null {
 }
 
 export function getCommitsByDate(date: string): RawCommit[] {
+  const unpushed = getUnpushedCommitSet()
   const sep = '---GD---'
   const d = new Date(date + 'T12:00:00')
   const prev = new Date(d); prev.setDate(prev.getDate() - 2)
@@ -134,7 +170,8 @@ export function getCommitsByDate(date: string): RawCommit[] {
   return raw.split('\n').filter(Boolean)
     .map(line => {
       const [hash, fullHash, message, author, d, committerDate] = line.split(sep)
-      return { hash, fullHash, message, author, date: d, committerDate }
+      const onRemote = unpushed ? !unpushed.has(fullHash) : false
+      return { hash, fullHash, message, author, date: d, committerDate, onRemote }
     })
     .filter(c => c.date.startsWith(date))
 }

@@ -79,10 +79,14 @@ function watchGitDir(): void {
   // Watch working tree for file changes; only run git status when something changes
   let lastDirty = hasUncommittedChanges()
   let dirtyDebounce: ReturnType<typeof setTimeout> | null = null
+  const ignoredDirs = ['/node_modules/', '/dist/', '/build/', '/coverage/', '/.next/']
   try {
     watch('.', { recursive: true }, (_event, filename) => {
       if (watchPaused) return
-      if (typeof filename === 'string' && (filename.startsWith('.git') || filename.includes('node_modules'))) return
+      if (typeof filename === 'string') {
+        const normalized = '/' + filename.replace(/\\/g, '/')
+        if (normalized.startsWith('/.git/') || ignoredDirs.some(d => normalized.includes(d))) return
+      }
       if (dirtyDebounce) clearTimeout(dirtyDebounce)
       dirtyDebounce = setTimeout(() => {
         const dirty = hasUncommittedChanges()

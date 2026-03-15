@@ -32,6 +32,7 @@ export interface RecentCommit {
   author: string
   date: string
   committerDate: string
+  onRemote: boolean
 }
 
 export interface ReflogTrace {

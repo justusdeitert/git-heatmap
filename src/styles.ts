@@ -554,6 +554,13 @@ footer a { color: var(--accent); text-decoration: none; }
   font-size: 13px;
 }
 
+.commit-local {
+  color: var(--text-muted);
+  margin-left: 6px;
+  cursor: help;
+  font-size: 13px;
+}
+
 .dirty-banner {
   background: rgba(210, 153, 34, 0.08);
   border: 1px solid rgba(210, 153, 34, 0.3);
