@@ -163,7 +163,21 @@ h1 span { color: var(--text-muted); font-weight: 400; }
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
   font-size: 12px;
   color: var(--accent);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 4px;
+  padding: 1px 4px;
+  transition: background 0.15s;
 }
+
+.commit-hash:hover { background: rgba(88,166,255,0.1); }
+.commit-hash.hash-copied { color: var(--level-3); }
+
+.copy-icon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.4; transition: opacity 0.15s; }
+.commit-hash:hover .copy-icon { opacity: 1; }
+.copy-icon.copied { color: var(--level-3); opacity: 1; }
 
 .commit-msg {
   overflow: hidden;

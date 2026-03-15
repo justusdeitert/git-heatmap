@@ -27,6 +27,7 @@ export interface Stats {
 
 export interface RecentCommit {
   hash: string
+  fullHash: string
   message: string
   author: string
   date: string

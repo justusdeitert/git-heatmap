@@ -56,6 +56,7 @@ export function getCurrentBranch(): string {
 
 export interface RawCommit {
   hash: string
+  fullHash: string
   message: string
   author: string
   date: string
@@ -68,10 +69,10 @@ export function getCommitCount(): number {
 
 export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
   const sep = '---GD---'
-  const raw = git(`git log --no-merges --format="%h${sep}%s${sep}%an${sep}%aI" --skip=${skip} -${count}`)
+  const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI" --skip=${skip} -${count}`)
   if (!raw) return []
   return raw.split('\n').filter(Boolean).map(line => {
-    const [hash, message, author, date] = line.split(sep)
-    return { hash, message, author, date }
+    const [hash, fullHash, message, author, date] = line.split(sep)
+    return { hash, fullHash, message, author, date }
   })
 }

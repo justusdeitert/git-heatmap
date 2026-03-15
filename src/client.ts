@@ -17,6 +17,26 @@ document.querySelectorAll<HTMLElement>('.day').forEach(el => {
 
 new EventSource('/events').addEventListener('message', () => location.reload())
 
+const COPY_ICON = '<svg class="copy-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>'
+const CHECK_ICON = '<svg class="copy-icon copied" viewBox="0 0 16 16" fill="currentColor"><path d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.751.751 0 0 1 .018-1.042.751.751 0 0 1 1.042-.018L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>'
+
+function bindCopyHandlers(container: HTMLElement): void {
+  container.querySelectorAll<HTMLElement>('.commit-hash').forEach(el => {
+    el.addEventListener('click', async () => {
+      const full = el.dataset.full
+      if (!full) return
+      await navigator.clipboard.writeText(full)
+      const original = el.innerHTML
+      el.innerHTML = el.textContent + ' ' + CHECK_ICON
+      el.classList.add('hash-copied')
+      setTimeout(() => {
+        el.innerHTML = original
+        el.classList.remove('hash-copied')
+      }, 1500)
+    })
+  })
+}
+
 let currentPage = 1
 
 function relTime(iso: string): string {
@@ -37,6 +57,7 @@ function esc(s: string): string {
 
 interface CommitEntry {
   hash: string
+  fullHash: string
   message: string
   author: string
   date: string
@@ -64,11 +85,12 @@ async function loadCommits(page: number): Promise<void> {
   } else {
     list.innerHTML = data.commits.map(c =>
       '<div class="commit-row">' +
-      '<code class="commit-hash">' + c.hash + '</code>' +
+      '<code class="commit-hash" data-full="' + c.fullHash + '" title="Click to copy">' + c.hash + COPY_ICON + '</code>' +
       '<span class="commit-msg">' + esc(c.message) + '</span>' +
       '<span class="commit-meta">' + esc(c.author) + ' &middot; ' + relTime(c.date) + '</span>' +
       '</div>'
     ).join('')
+    bindCopyHandlers(list)
   }
 
   const pag = document.getElementById('pagination')!
