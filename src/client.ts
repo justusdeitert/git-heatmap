@@ -450,8 +450,13 @@ function closeModal(): void {
 }
 
 modalClose.addEventListener('click', closeModal)
+let mouseDownOnOverlay = false
+modalOverlay.addEventListener('mousedown', e => {
+  mouseDownOnOverlay = e.target === modalOverlay
+})
 modalOverlay.addEventListener('click', e => {
-  if (e.target === modalOverlay) closeModal()
+  if (e.target === modalOverlay && mouseDownOnOverlay) closeModal()
+  mouseDownOnOverlay = false
 })
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal()
