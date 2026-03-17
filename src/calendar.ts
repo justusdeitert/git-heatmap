@@ -1,5 +1,13 @@
 import type { CommitMap, Week, MonthLabel, Stats } from './types.js'
 
+/** Formats a Date as 'YYYY-MM-DD' using local time. */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /**
  * Groups ISO date strings into a { 'YYYY-MM-DD': count } map.
  */
@@ -41,7 +49,7 @@ function getLevel(count: number, max: number): number {
  * Builds an array of weeks for a specific calendar year.
  */
 export function buildCalendarWeeks(commitMap: CommitMap, year: number): Week[] {
-  const todayStr = new Date().toISOString().slice(0, 10)
+  const todayStr = localDateStr(new Date())
   const jan1 = new Date(year, 0, 1)
   const start = new Date(jan1)
   start.setDate(start.getDate() - start.getDay())
@@ -55,7 +63,7 @@ export function buildCalendarWeeks(commitMap: CommitMap, year: number): Week[] {
   while (current <= dec31) {
     const week: Week = []
     for (let d = 0; d < 7; d++) {
-      const date = current.toISOString().slice(0, 10)
+      const date = localDateStr(current)
       const inYear = current.getFullYear() === year
       const isPastOrToday = date <= todayStr
       const count = commitMap[date] || 0
@@ -106,7 +114,7 @@ export function computeStats(commitMap: CommitMap, totalCommits: number): Stats 
   // Current streak (counting back from today)
   let streak = 0
   const d = new Date()
-  while (commitMap[d.toISOString().slice(0, 10)]) {
+  while (commitMap[localDateStr(d)]) {
     streak++
     d.setDate(d.getDate() - 1)
   }
