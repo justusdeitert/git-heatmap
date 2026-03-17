@@ -670,6 +670,12 @@ footer a { color: var(--accent); text-decoration: none; }
   padding: 24px;
   max-width: 420px;
   width: 90vw;
+.commit-time-tip {
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 .confirm-title {

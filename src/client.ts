@@ -96,6 +96,12 @@ function relTime(iso: string): string {
   return Math.floor(d / 30) + 'mo ago'
 }
 
+function fullDateTime(iso: string): string {
+  return new Date(iso).toLocaleDateString('en', {
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+  })
+}
+
 function esc(s: string): string {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }
@@ -136,10 +142,11 @@ async function loadCommits(page: number): Promise<void> {
       const dateMismatch = c.date !== c.committerDate
       const warn = dateMismatch ? '<span class="commit-warn" data-tooltip="Author date and committer date differ">&#9888;</span>' : ''
       const local = !c.onRemote ? '<span class="commit-local" data-tooltip="Not on upstream yet. This commit is still editable.">&#8682;</span>' : ''
+      const fullTime = fullDateTime(c.date).replace(/"/g, '&quot;')
       return '<div class="commit-row">' +
         '<code class="commit-hash" data-full="' + c.fullHash + '" title="Click to copy">' + c.hash + COPY_ICON + '</code>' +
         '<span class="commit-msg">' + esc(c.message) + '</span>' +
-        '<span class="commit-meta">' + esc(c.author) + ' &middot; ' + relTime(c.date) + warn + local + '</span>' +
+        '<span class="commit-meta">' + esc(c.author) + ' &middot; <span class="commit-time-tip" data-tooltip="' + fullTime + '">' + relTime(c.date) + '</span>' + warn + local + '</span>' +
         '</div>'
     }).join('')
     bindCopyHandlers(list)
@@ -460,7 +467,7 @@ function bindCommitClickHandlers(container: HTMLElement): void {
 }
 
 function bindWarnTooltips(container: HTMLElement): void {
-  container.querySelectorAll<HTMLElement>('.commit-warn, .commit-local').forEach(el => {
+  container.querySelectorAll<HTMLElement>('.commit-warn, .commit-local, .commit-time-tip').forEach(el => {
     el.addEventListener('mouseenter', () => {
       tooltip.textContent = el.dataset.tooltip ?? ''
       tooltip.classList.add('visible')
