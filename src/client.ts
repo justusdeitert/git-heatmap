@@ -9,25 +9,29 @@ function positionTooltipLeftOfCursor(e: MouseEvent): void {
   tooltip.style.top = e.clientY - 36 + 'px'
 }
 
-document.querySelectorAll<HTMLElement>('.day').forEach(el => {
-  el.addEventListener('mouseenter', () => {
-    tooltip.textContent = el.dataset.tooltip ?? ''
-    tooltip.classList.add('visible')
+function bindHeatmapCellHandlers(): void {
+  document.querySelectorAll<HTMLElement>('.day').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      tooltip.textContent = el.dataset.tooltip ?? ''
+      tooltip.classList.add('visible')
+    })
+    el.addEventListener('mousemove', e => {
+      positionTooltipLeftOfCursor(e)
+    })
+    el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
+    el.addEventListener('click', () => {
+      const date = el.dataset.date
+      if (!date) return
+      if (activeDate === date) {
+        clearDateFilter()
+      } else {
+        filterByDate(date)
+      }
+    })
   })
-  el.addEventListener('mousemove', e => {
-    positionTooltipLeftOfCursor(e)
-  })
-  el.addEventListener('mouseleave', () => tooltip.classList.remove('visible'))
-  el.addEventListener('click', () => {
-    const date = el.dataset.date
-    if (!date) return
-    if (activeDate === date) {
-      clearDateFilter()
-    } else {
-      filterByDate(date)
-    }
-  })
-})
+}
+
+bindHeatmapCellHandlers()
 
 let reloadSuppressed = false
 new EventSource('/events').addEventListener('message', () => {
@@ -524,5 +528,49 @@ confirmOk.addEventListener('click', async () => {
     confirmOk.textContent = 'Clear traces'
   }
 })
+
+// --- Year selector ---
+
+// Determine the initially active year from the pre-selected link
+let activeYear: number | null = (() => {
+  const el = document.querySelector<HTMLElement>('.year-link.year-active')
+  return el ? parseInt(el.dataset.year!, 10) : null
+})()
+
+function selectYear(year: number): void {
+  activeYear = year
+  fetchCalendar(activeYear)
+  updateYearLinks()
+}
+
+function updateYearLinks(): void {
+  document.querySelectorAll<HTMLElement>('.year-link').forEach(el => {
+    const y = parseInt(el.dataset.year!, 10)
+    el.classList.toggle('year-active', y === activeYear)
+  })
+}
+
+async function fetchCalendar(year: number): Promise<void> {
+  const url = '/api/calendar?year=' + year
+  const res = await fetch(url)
+  const data = await res.json()
+
+  const scroll = document.getElementById('heatmapScroll')!
+  scroll.innerHTML = data.svg
+
+  bindHeatmapCellHandlers()
+}
+
+function bindYearLinks(): void {
+  document.querySelectorAll<HTMLElement>('.year-link').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault()
+      const year = parseInt(el.dataset.year!, 10)
+      selectYear(year)
+    })
+  })
+}
+
+bindYearLinks()
 
 loadCommits(1)

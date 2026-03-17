@@ -13,6 +13,20 @@ export function buildCommitMap(dates: string[]): CommitMap {
 }
 
 /**
+ * Filters a commit map to only include entries for a given year.
+ */
+export function filterCommitMapByYear(commitMap: CommitMap, year: number): CommitMap {
+  const filtered: CommitMap = {}
+  const prefix = String(year) + '-'
+  for (const [date, count] of Object.entries(commitMap)) {
+    if (date.startsWith(prefix)) {
+      filtered[date] = count
+    }
+  }
+  return filtered
+}
+
+/**
  * Maps a commit count to an intensity level 0–4 (GitHub-style quartiles).
  */
 function getLevel(count: number, max: number): number {
@@ -24,24 +38,33 @@ function getLevel(count: number, max: number): number {
 }
 
 /**
- * Builds an array of weeks, each containing 7 day objects with
- * { date, count, level, future } for the last ~52 weeks.
+ * Builds an array of weeks for a specific calendar year.
  */
-export function buildCalendarWeeks(commitMap: CommitMap): Week[] {
-  const today = new Date()
-  const start = new Date(today)
-  start.setDate(start.getDate() - 364 - start.getDay())
+export function buildCalendarWeeks(commitMap: CommitMap, year: number): Week[] {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const jan1 = new Date(year, 0, 1)
+  const start = new Date(jan1)
+  start.setDate(start.getDate() - start.getDay())
+
+  const dec31 = new Date(year, 11, 31)
 
   const max = Math.max(...Object.values(commitMap), 1)
   const weeks: Week[] = []
   const current = new Date(start)
 
-  while (current <= today) {
+  while (current <= dec31) {
     const week: Week = []
     for (let d = 0; d < 7; d++) {
       const date = current.toISOString().slice(0, 10)
+      const inYear = current.getFullYear() === year
+      const isPastOrToday = date <= todayStr
       const count = commitMap[date] || 0
-      week.push({ date, count, level: getLevel(count, max), future: current > today })
+      week.push({
+        date,
+        count: (inYear && isPastOrToday) ? count : 0,
+        level: (inYear && isPastOrToday) ? getLevel(count, max) : 0,
+        future: !inYear,
+      })
       current.setDate(current.getDate() + 1)
     }
     weeks.push(week)

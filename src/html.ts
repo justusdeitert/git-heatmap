@@ -155,9 +155,28 @@ const CLIENT_JS = readFileSync(join(__dirname, 'client.js'), 'utf-8')
 
 const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%231f2328' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: light)"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%23e6edf3' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: dark)">`
 
-export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirty, traces }: DashboardData): string {
+export function buildHeatmapSvg(weeks: Week[], labels: MonthLabel[]): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP)
   const svgHeight = HEADER_H + 7 * (CELL + GAP)
+  return `<svg width="${svgWidth}" height="${svgHeight}">
+          ${monthLabels(labels)}
+          ${dayLabels()}
+          ${cells(weeks)}
+        </svg>`
+}
+
+function yearSelector(years: number[]): string {
+  if (years.length === 0) return ''
+  if (years.length === 1) {
+    return `<span class="year-single">${years[0]}</span>`
+  }
+  const defaultYear = years[years.length - 1]
+  return '<div class="year-selector" id="yearList">' +
+    years.map(y => `<a class="year-link${y === defaultYear ? ' year-active' : ''}" data-year="${y}">${y}</a>`).join('') +
+    '</div>'
+}
+
+export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirty, traces, availableYears }: DashboardData): string {
   const now = new Date().toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   const dirtyBanner = dirty ? `
     <div class="dirty-banner">
@@ -185,13 +204,9 @@ ${dirtyBanner}
     <div class="stats">${statCards(stats, authors)}</div>
 
     <div class="card">
-      <div class="card-title">Commit Activity <span style="color:var(--text-muted);font-weight:400">— last 12 months</span></div>
-      <div class="heatmap-scroll">
-        <svg width="${svgWidth}" height="${svgHeight}">
-          ${monthLabels(labels)}
-          ${dayLabels()}
-          ${cells(weeks)}
-        </svg>
+      <div class="card-title">Commit Activity${yearSelector(availableYears)}</div>
+      <div class="heatmap-scroll" id="heatmapScroll">
+        ${buildHeatmapSvg(weeks, labels)}
       </div>
       <div class="legend">
         <span class="legend-text">Less</span>${LEGEND_SVG}

@@ -5,8 +5,8 @@ import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
 import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
-import { buildCommitMap, buildCalendarWeeks, getMonthLabels, computeStats } from './calendar.js'
-import { generateHTML } from './html.js'
+import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabels, computeStats } from './calendar.js'
+import { generateHTML, buildHeatmapSvg } from './html.js'
 import { parseArgs } from './args.js'
 
 const args = parseArgs(process.argv.slice(2))
@@ -39,14 +39,17 @@ function buildDashboard(): string {
   const authors = getAuthorCount()
 
   const commitMap = buildCommitMap(dates)
-  const weeks = buildCalendarWeeks(commitMap)
+  const availableYears = [...new Set(dates.map(d => parseInt(d.slice(0, 4), 10)))].sort((a, b) => a - b)
+  const defaultYear = availableYears.length > 0 ? availableYears[availableYears.length - 1] : new Date().getFullYear()
+  const yearMap = filterCommitMapByYear(commitMap, defaultYear)
+  const weeks = buildCalendarWeeks(yearMap, defaultYear)
   const monthLabels = getMonthLabels(weeks)
   const stats = computeStats(commitMap, dates.length)
   const recentCommits = getRecentCommits()
   const dirty = hasUncommittedChanges()
   const traces = getReflogTraces()
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty, traces })
+  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty, traces, availableYears })
 }
 
 // --- SSE live-reload ---
@@ -181,6 +184,27 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     setTimeout(() => { watchPaused = false }, 500)
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify({ ...detail, ...editableStatus }))
+    return
+  }
+
+  if (parsed.pathname === '/api/calendar') {
+    const yearParam = parsed.searchParams.get('year')
+    if (!yearParam || !/^\d{4}$/.test(yearParam)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: 'year parameter required' }))
+      return
+    }
+    const year = parseInt(yearParam, 10)
+    const dates = getCommitDates()
+    const fullMap = buildCommitMap(dates)
+
+    const yearMap = filterCommitMapByYear(fullMap, year)
+    const calWeeks = buildCalendarWeeks(yearMap, year)
+    const calLabels = getMonthLabels(calWeeks)
+
+    const svg = buildHeatmapSvg(calWeeks, calLabels)
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify({ svg }))
     return
   }
 

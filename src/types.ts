@@ -54,4 +54,5 @@ export interface DashboardData {
   recentCommits: RecentCommit[]
   dirty: boolean
   traces: ReflogTrace[]
+  availableYears: number[]
 }
