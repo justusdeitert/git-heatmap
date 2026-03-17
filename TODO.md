@@ -2,7 +2,7 @@
 
 ## Low effort, high value
 
-- [ ] **Commit activity chart** — bar/sparkline showing commits per week/month (trend view alongside heatmap)
+- [x] **Commit activity heatmap** — GitHub-style heatmap with year switching and click-to-filter
 - [ ] **Top authors table** — contributor names with commit counts, mini leaderboard
 - [ ] **Branch list** — active branches with last commit date
 - [x] **Favicon** — inline SVG favicon for a polished browser tab
@@ -17,6 +17,6 @@
 ## Bigger features
 
 - [ ] **Multi-branch comparison** — toggle between branches to see different heatmaps
-- [ ] **Date range picker** — custom time window instead of fixed last 12 months
+- [x] **Year selector** — switch between years instead of fixed last 12 months
 - [x] **CLI flags** — `--port`, `--no-open` to customize without env vars
 - [ ] **Repo comparison mode** — run from parent directory, see multiple repos side-by-side
