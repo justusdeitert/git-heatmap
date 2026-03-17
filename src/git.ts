@@ -261,7 +261,7 @@ export function rewriteCommitDate(hash: string, newDate: string): void {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`
     // Start interactive rebase, pausing at the target commit
     execSync(
-      `GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${resolved}~1`,
+      `GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`,
       { encoding: 'utf8', stdio: 'pipe' }
     )
     // Amend the date while paused
