@@ -189,6 +189,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="google" content="notranslate">
   <title>${repoName} — Git Dashboard</title>
   ${FAVICON}
   <style>${CSS}</style>
