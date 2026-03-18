@@ -42,6 +42,11 @@ export interface ReflogTrace {
   date: string
 }
 
+export interface UncommittedFile {
+  status: string
+  file: string
+}
+
 export interface DashboardData {
   repoName: string
   remoteUrl: string | null
@@ -52,7 +57,7 @@ export interface DashboardData {
   branch: string
   firstCommit: string | null
   recentCommits: RecentCommit[]
-  dirty: boolean
+  dirtyFiles: UncommittedFile[]
   traces: ReflogTrace[]
   availableYears: number[]
 }

@@ -33,6 +33,19 @@ function bindHeatmapCellHandlers(): void {
 
 bindHeatmapCellHandlers()
 
+// Dirty files toggle with persistence
+const dirtyBanner = document.querySelector('.dirty-banner')
+const dirtyToggle = document.querySelector('.dirty-toggle')
+if (dirtyBanner && dirtyToggle) {
+  if (sessionStorage.getItem('dirtyFilesExpanded') === 'true') {
+    dirtyBanner.classList.add('expanded')
+  }
+  dirtyToggle.addEventListener('click', () => {
+    dirtyBanner.classList.toggle('expanded')
+    sessionStorage.setItem('dirtyFilesExpanded', dirtyBanner.classList.contains('expanded') ? 'true' : 'false')
+  })
+}
+
 let reloadSuppressed = false
 new EventSource('/events').addEventListener('message', () => {
   if (!reloadSuppressed) location.reload()

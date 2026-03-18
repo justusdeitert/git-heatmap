@@ -7,12 +7,66 @@ export const traceCSS = `
   font-size: 13px;
   color: #d29922;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
   margin-bottom: 16px;
 }
+.dirty-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #d29922;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+.dirty-toggle:hover {
+  color: #e5ac30;
+}
+.dirty-chevron {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  margin-left: auto;
+  opacity: 0.7;
+}
+.dirty-toggle:hover .dirty-chevron {
+  opacity: 1;
+}
+.dirty-banner.expanded .dirty-chevron {
+  transform: rotate(180deg);
+}
 .dirty-icon {
   font-size: 16px;
+}
+.dirty-files {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 24px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+.dirty-banner.expanded .dirty-files {
+  display: block;
+}
+.dirty-files li {
+  padding: 3px 0;
+  font-size: 12px;
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+.dirty-status {
+  display: inline-block;
+  min-width: 24px;
+  color: #d29922;
+  margin-right: 8px;
+  font-weight: 600;
 }
 
 .trace-card .card-title {

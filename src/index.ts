@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, getUncommittedFiles, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML, buildHeatmapSvg } from './html.js'
 import { parseArgs } from './args.js'
@@ -46,10 +46,10 @@ function buildDashboard(): string {
   const monthLabels = getMonthLabels(weeks)
   const stats = computeStats(commitMap, dates.length)
   const recentCommits = getRecentCommits()
-  const dirty = hasUncommittedChanges()
+  const dirtyFiles = getUncommittedFiles()
   const traces = getReflogTraces()
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirty, traces, availableYears })
+  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirtyFiles, traces, availableYears })
 }
 
 // --- SSE live-reload ---
@@ -79,8 +79,8 @@ function watchGitDir(): void {
     } catch { /* dir may not exist yet */ }
   }
 
-  // Watch working tree for file changes; only run git status when something changes
-  let lastDirty = hasUncommittedChanges()
+  // Watch working tree for file changes; update when dirty files change
+  let lastDirtyFiles = JSON.stringify(getUncommittedFiles())
   let dirtyDebounce: ReturnType<typeof setTimeout> | null = null
   const ignoredDirs = ['/node_modules/', '/dist/', '/build/', '/coverage/', '/.next/']
   try {
@@ -92,9 +92,9 @@ function watchGitDir(): void {
       }
       if (dirtyDebounce) clearTimeout(dirtyDebounce)
       dirtyDebounce = setTimeout(() => {
-        const dirty = hasUncommittedChanges()
-        if (dirty !== lastDirty) {
-          lastDirty = dirty
+        const dirtyFiles = JSON.stringify(getUncommittedFiles())
+        if (dirtyFiles !== lastDirtyFiles) {
+          lastDirtyFiles = dirtyFiles
           notifyClients()
         }
       }, 200)

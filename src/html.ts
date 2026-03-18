@@ -5,6 +5,10 @@ import * as icons from './icons.js'
 import { CSS } from './styles.js'
 import type { DashboardData, MonthLabel, RecentCommit, ReflogTrace, Stats, Week } from './types.js'
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
 // --- SVG layout constants ---
 
 const CELL = 12
@@ -176,12 +180,18 @@ function yearSelector(years: number[]): string {
     '</div>'
 }
 
-export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirty, traces, availableYears }: DashboardData): string {
+export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirtyFiles, traces, availableYears }: DashboardData): string {
   const now = new Date().toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-  const dirtyBanner = dirty ? `
+  const dirtyBanner = dirtyFiles.length > 0 ? `
     <div class="dirty-banner">
-      <span class="dirty-icon">&#9888;</span>
-      You have uncommitted changes in your working directory.
+      <button class="dirty-toggle" type="button">
+        <span class="dirty-icon">&#9888;</span>
+        <span class="dirty-text">You have ${dirtyFiles.length} uncommitted change${dirtyFiles.length === 1 ? '' : 's'} in your working directory.</span>
+        <svg class="dirty-chevron" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
+      </button>
+      <ul class="dirty-files">
+        ${dirtyFiles.map(f => `<li><code class="dirty-status">${escapeHtml(f.status)}</code>${escapeHtml(f.file)}</li>`).join('')}
+      </ul>
     </div>` : ''
 
   return `<!DOCTYPE html>
