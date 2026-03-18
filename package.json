@@ -1,10 +1,10 @@
 {
-  "name": "@justusdeitert/git-dashboard",
+  "name": "git-heatmap",
   "version": "0.1.0",
-  "description": "Beautiful live git dashboard with commit heatmap",
+  "description": "GitHub-style commit heatmap dashboard for any git repository",
   "type": "module",
   "bin": {
-    "git-dashboard": "./dist/index.js"
+    "git-heatmap": "./dist/index.js"
   },
   "files": [
     "dist/",

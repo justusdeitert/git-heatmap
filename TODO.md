@@ -1,4 +1,4 @@
-# git-dashboard — Feature Ideas
+# git-heatmap — Feature Ideas
 
 ## Low effort, high value
 

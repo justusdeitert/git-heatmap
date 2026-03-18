@@ -222,7 +222,7 @@ export function getCommitEditableStatus(hash: string): { editable: boolean; reas
 }
 
 export function rewriteCommitMessage(hash: string, newMessage: string): void {
-  const msgFile = join(tmpdir(), 'git-dashboard-msg-' + Date.now() + '.txt')
+  const msgFile = join(tmpdir(), 'git-heatmap-msg-' + Date.now() + '.txt')
   writeFileSync(msgFile, newMessage)
   try {
     if (isHeadCommit(hash)) {
@@ -259,7 +259,7 @@ export function rewriteCommitDate(hash: string, newDate: string): void {
     const subject = git(`git log -1 --format="%s" ${hash}`)
     const body = git(`git log -1 --format="%b" ${hash}`)
     const fullMsg = body ? subject + '\n\n' + body : subject
-    const msgFile = join(tmpdir(), 'git-dashboard-date-' + Date.now() + '.txt')
+    const msgFile = join(tmpdir(), 'git-heatmap-date-' + Date.now() + '.txt')
     writeFileSync(msgFile, fullMsg)
     try {
       execSync(

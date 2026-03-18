@@ -13,7 +13,7 @@ const args = parseArgs(process.argv.slice(2))
 
 if (args.help) {
   console.log(`
-  Usage: git-dashboard [options]
+  Usage: git-heatmap [options]
 
   Options:
     --port <number>   Port to listen on (default: 3333, or PORT env)
