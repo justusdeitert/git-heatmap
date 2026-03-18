@@ -243,15 +243,17 @@ function renderModal(d: CommitDetailData): void {
   const fullMessage = d.body ? d.subject + '\n\n' + d.body : d.subject
 
   let html = ''
+  // Update hash in top bar
+  const hashEl = document.getElementById('modalHash')!
+  hashEl.dataset.full = d.fullHash
+  hashEl.title = 'Click to copy'
+  hashEl.innerHTML = d.fullHash + COPY_ICON
   if (!d.editable && d.reason) {
     html += '<div class="modal-edit-notice"><span class="dirty-icon">&#9888;</span>' + esc(d.reason) + '</div>'
   }
   if (d.committerDate !== d.authorDate) {
     html += '<div class="modal-edit-notice"><span class="dirty-icon">&#9888;</span>Author date and committer date differ. This commit may have been amended or rebased.</div>'
   }
-  html += '<div class="modal-header">'
-  html += '<code class="modal-hash" data-full="' + d.fullHash + '" title="Click to copy">' + d.fullHash + COPY_ICON + '</code>'
-  html += '</div>'
   html += '<div class="modal-subject-row">'
   html += '<div class="modal-subject">' + esc(d.subject) + '</div>'
   if (d.editable) {
@@ -313,20 +315,17 @@ function renderModal(d: CommitDetailData): void {
   modalContent.innerHTML = html
 
   // Bind copy on modal hash
-  const hashEl = modalContent.querySelector<HTMLElement>('.modal-hash')
-  if (hashEl) {
-    hashEl.addEventListener('click', async () => {
-      const full = hashEl.dataset.full
-      if (!full) return
-      await navigator.clipboard.writeText(full)
-      const original = hashEl.innerHTML
-      hashEl.innerHTML = hashEl.textContent + ' ' + CHECK_ICON
-      hashEl.classList.add('hash-copied')
-      setTimeout(() => {
-        hashEl.innerHTML = original
-        hashEl.classList.remove('hash-copied')
-      }, 1500)
-    })
+  hashEl.onclick = async () => {
+    const full = hashEl.dataset.full
+    if (!full) return
+    await navigator.clipboard.writeText(full)
+    const original = hashEl.innerHTML
+    hashEl.innerHTML = hashEl.textContent + ' ' + CHECK_ICON
+    hashEl.classList.add('hash-copied')
+    setTimeout(() => {
+      hashEl.innerHTML = original
+      hashEl.classList.remove('hash-copied')
+    }, 1500)
   }
 
   // Bind rename handlers

@@ -19,7 +19,7 @@ export const modalCSS = `
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 50px 24px 24px;
+  padding: 24px;
   max-width: 640px;
   width: 90vw;
   max-height: 80vh;
@@ -28,10 +28,14 @@ export const modalCSS = `
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
 
+.modal-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
 .modal-close {
-  position: absolute;
-  top: 12px;
-  right: 16px;
   background: none;
   border: none;
   color: var(--text-muted);
@@ -40,6 +44,7 @@ export const modalCSS = `
   line-height: 1;
   padding: 4px;
   transition: color 0.15s;
+  margin-left: auto;
 }
 
 .modal-close:hover { color: var(--text); }

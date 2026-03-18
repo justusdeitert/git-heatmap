@@ -243,7 +243,10 @@ ${tracesPanel(traces)}
   <div class="tooltip" id="tooltip"></div>
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal" id="commitModal">
-      <button class="modal-close" id="modalClose">&times;</button>
+      <div class="modal-top-bar">
+        <code class="modal-hash" id="modalHash"></code>
+        <button class="modal-close" id="modalClose">&times;</button>
+      </div>
       <div id="modalContent"></div>
     </div>
   </div>
