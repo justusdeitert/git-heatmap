@@ -286,7 +286,7 @@ function startServer(port: number): void {
 
   server.listen(port, '127.0.0.1', () => {
     const url = `http://127.0.0.1:${port}`
-    console.log(`\n  ● Git Dashboard running at ${url}`)
+    console.log(`\n  ● Git Heatmap running at ${url}`)
     console.log('  Live-reloads on git changes. Press Ctrl+C to stop.\n')
     if (args.open) openBrowser(url)
   })

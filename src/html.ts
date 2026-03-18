@@ -200,7 +200,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google" content="notranslate">
-  <title>${repoName} — Git Dashboard</title>
+  <title>${repoName} — Git Heatmap</title>
   ${FAVICON}
   <style>${CSS}</style>
 </head>
@@ -208,7 +208,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
   <div class="container">
     <header>
       ${icons.repo}
-      <h1>${repoName} <span>— Git Dashboard</span></h1>
+      <h1>${repoName} <span>— Git Heatmap</span></h1>
       <span class="badge">${branch}</span>
     </header>
 ${dirtyBanner}
