@@ -29,3 +29,4 @@
 - [ ] **HTML templating** — replace template string HTML in `html.ts` with a proper templating engine (e.g. EJS, Handlebars) or `.html` files
 - [ ] **Split html.ts** — extract SVG builders and HTML helpers into separate modules
 - [ ] **Live reload** — watch mode with auto-refresh during development
+- [ ] **ESLint** — add ESLint with TypeScript support for consistent code quality
