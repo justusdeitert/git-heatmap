@@ -97,13 +97,6 @@ export const commitsCSS = `
   font-size: 13px;
 }
 
-.commit-time-tip {
-  cursor: help;
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 2px;
-}
-
 .pagination {
   display: flex;
   align-items: center;

@@ -110,9 +110,7 @@ function relativeTime(iso: string): string {
 }
 
 function fullDateTime(iso: string): string {
-  return new Date(iso).toLocaleDateString('en', {
-    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
-  })
+  return new Date(iso).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
 }
 
 function commitList(commits: RecentCommit[]): string {
@@ -121,12 +119,11 @@ function commitList(commits: RecentCommit[]): string {
     const dateMismatch = c.date !== c.committerDate
     const warn = dateMismatch ? '<span class="commit-warn" data-tooltip="Author date and committer date differ">&#9888;</span>' : ''
     const local = !c.onRemote ? '<span class="commit-local" data-tooltip="Not on upstream yet. This commit is still editable.">&#8682;</span>' : ''
-    const fullTime = fullDateTime(c.date).replace(/"/g, '&quot;')
     return `
     <div class="commit-row">
       <code class="commit-hash" data-full="${c.fullHash}" title="Click to copy">${c.hash}<svg class="copy-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></code>
       <span class="commit-msg">${c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
-      <span class="commit-meta">${c.author} &middot; <span class="commit-time-tip" data-tooltip="${fullTime}">${relativeTime(c.date)}</span>${warn}${local}</span>
+      <span class="commit-meta">${c.author} &middot; ${fullDateTime(c.date)}${warn}${local}</span>
     </div>`
   }).join('')
 }
@@ -182,7 +179,7 @@ function yearSelector(years: number[]): string {
 }
 
 export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirtyFiles, traces, availableYears }: DashboardData): string {
-  const now = new Date().toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const now = new Date().toLocaleString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
   const dirtyBanner = dirtyFiles.length > 0 ? `
     <div class="dirty-banner">
       <button class="dirty-toggle" type="button">
