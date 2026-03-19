@@ -206,6 +206,20 @@ function formatFullDate(iso: string): string {
   return new Date(iso).toLocaleString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }
 
+function toLocalISOString(date: Date): string {
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  const offset = -date.getTimezoneOffset()
+  const sign = offset >= 0 ? '+' : '-'
+  const absOff = Math.abs(offset)
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate()) + 'T' +
+    pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds()) +
+    sign + pad(Math.floor(absOff / 60)) + ':' + pad(absOff % 60)
+}
+
+function toLocalDateTimeValue(iso: string): string {
+  return toLocalISOString(new Date(iso)).slice(0, 19)
+}
+
 function colorizeStatLine(line: string): string {
   const escaped = esc(line)
   // Match: filename | count ++++----
@@ -276,7 +290,7 @@ function renderModal(d: CommitDetailData): void {
   if (!showCommitterRow && d.editable) {
     html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
     html += '<div class="date-edit-row">'
-    html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + d.authorDate.slice(0, 19) + '">'
+    html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + toLocalDateTimeValue(d.authorDate) + '">'
     html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
     html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
     html += '</div>'
@@ -292,7 +306,7 @@ function renderModal(d: CommitDetailData): void {
     if (d.editable) {
       html += '<div class="date-edit-form" id="dateEditForm" style="display:none">'
       html += '<div class="date-edit-row">'
-      html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + d.authorDate.slice(0, 19) + '">'
+      html += '<input type="datetime-local" class="date-edit-input" id="dateEditInput" step="1" value="' + toLocalDateTimeValue(d.authorDate) + '">'
       html += '<button class="rename-cancel" id="dateEditCancel">Cancel</button>'
       html += '<button class="rename-save" id="dateEditSave">Save Date</button>'
       html += '</div>'
@@ -414,7 +428,7 @@ function renderModal(d: CommitDetailData): void {
       if (dateEditError) dateEditError.textContent = ''
       reloadSuppressed = true
       try {
-        const isoDate = new Date(newDate).toISOString()
+        const isoDate = toLocalISOString(new Date(newDate))
         const res = await fetch('/api/commit/' + currentModalHash, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
