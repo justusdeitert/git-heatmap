@@ -1,12 +1,14 @@
 # git-heatmap
 
-GitHub-style commit heatmap dashboard for any git repository — runs locally in your browser.
+Interactive commit heatmap dashboard for any git repository.
 
-![Dark mode](https://img.shields.io/badge/dark%20mode-supported-333?style=flat-square) ![Light mode](https://img.shields.io/badge/light%20mode-supported-eee?style=flat-square&labelColor=666)
+[![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)](#)
+[![dark mode](https://img.shields.io/badge/dark%20mode-supported-333?style=flat-square)](README.md)
+[![light mode](https://img.shields.io/badge/light%20mode-supported-eee?style=flat-square&labelColor=666)](README.md)
 
 ## Features
 
-- GitHub-style commit heatmap with year selector
+- Interactive commit heatmap dashboard for any git repository
 - Stats: total commits, active days, current/longest streak, contributors, busiest day
 - Recent commits panel with messages and timestamps
 - Dark/light mode (follows system preference)
@@ -18,7 +20,7 @@ GitHub-style commit heatmap dashboard for any git repository — runs locally in
 ## Install
 
 ```bash
-npm install -g git-heatmap
+npm install git-heatmap
 ```
 
 ## Usage

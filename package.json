@@ -1,7 +1,7 @@
 {
   "name": "git-heatmap",
   "version": "0.1.0",
-  "description": "GitHub-style commit heatmap dashboard for any git repository",
+  "description": "Interactive commit heatmap dashboard for any git repository",
   "type": "module",
   "bin": {
     "git-heatmap": "./dist/index.js"
