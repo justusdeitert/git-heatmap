@@ -73,21 +73,38 @@ function bindCopyHandlers(container: HTMLElement): void {
 
 let currentPage = 1
 let activeDate: string | null = null
+let activeYear: number | null = (() => {
+  const el = document.querySelector<HTMLElement>('.year-link.year-active')
+  return el ? parseInt(el.dataset.year!, 10) : null
+})()
+
+function saveState(): void {
+  sessionStorage.setItem('ghm_page', String(currentPage))
+  if (activeDate) sessionStorage.setItem('ghm_date', activeDate)
+  else sessionStorage.removeItem('ghm_date')
+  if (activeYear !== null) sessionStorage.setItem('ghm_year', String(activeYear))
+  else sessionStorage.removeItem('ghm_year')
+}
+
+function applyDaySelection(): void {
+  document.querySelectorAll<HTMLElement>('.day').forEach(d => {
+    d.classList.toggle('day-selected', d.dataset.date === activeDate)
+  })
+  updateFilterBadge()
+}
 
 function filterByDate(date: string): void {
   activeDate = date
-  document.querySelectorAll<HTMLElement>('.day').forEach(d => {
-    d.classList.toggle('day-selected', d.dataset.date === date)
-  })
-  updateFilterBadge()
+  applyDaySelection()
+  saveState()
   loadCommits(1).then(scrollToCommits)
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars -- called from inline onclick
 function clearDateFilter(): void {
   activeDate = null
-  document.querySelectorAll<HTMLElement>('.day-selected').forEach(d => d.classList.remove('day-selected'))
-  updateFilterBadge()
+  applyDaySelection()
+  saveState()
   loadCommits(1)
 }
 
@@ -145,6 +162,7 @@ async function loadCommits(page: number): Promise<void> {
   const res = await fetch(url)
   const data: CommitResponse = await res.json()
   currentPage = data.page
+  saveState()
 
   const list = document.getElementById('commitList')!
   const countEl = document.getElementById('commitCount')!
@@ -557,16 +575,11 @@ confirmOk.addEventListener('click', async () => {
 
 // --- Year selector ---
 
-// Determine the initially active year from the pre-selected link
-let activeYear: number | null = (() => {
-  const el = document.querySelector<HTMLElement>('.year-link.year-active')
-  return el ? parseInt(el.dataset.year!, 10) : null
-})()
-
 function selectYear(year: number): void {
   activeYear = year
   fetchCalendar(activeYear)
   updateYearLinks()
+  saveState()
 }
 
 function updateYearLinks(): void {
@@ -585,6 +598,7 @@ async function fetchCalendar(year: number): Promise<void> {
   scroll.innerHTML = data.svg
 
   bindHeatmapCellHandlers()
+  applyDaySelection()
 }
 
 function bindYearLinks(): void {
@@ -599,4 +613,21 @@ function bindYearLinks(): void {
 
 bindYearLinks()
 
-loadCommits(1)
+// Restore persisted state after reload
+;(() => {
+  const savedPage = parseInt(sessionStorage.getItem('ghm_page') ?? '1', 10) || 1
+  const savedDate = sessionStorage.getItem('ghm_date')
+  const savedYear = sessionStorage.getItem('ghm_year')
+
+  if (savedDate) {
+    activeDate = savedDate
+    applyDaySelection()
+  }
+
+  if (savedYear) {
+    const y = parseInt(savedYear, 10)
+    if (y !== activeYear) selectYear(y)
+  }
+
+  loadCommits(savedPage)
+})()
