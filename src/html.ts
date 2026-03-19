@@ -202,7 +202,7 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
   ${FAVICON}
   <style>${CSS}</style>
 </head>
-<body>
+<body style="opacity:0">
   <div class="container">
     <header>
       ${icons.repo}

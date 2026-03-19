@@ -1,12 +1,15 @@
 export const baseCSS = `
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Noto Sans, Helvetica, Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   padding: 24px;
+  animation: fadeIn .3s ease-out forwards;
 }
 
 .container { max-width: 960px; margin: 0 auto; }
