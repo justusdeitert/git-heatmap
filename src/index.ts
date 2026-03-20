@@ -9,6 +9,37 @@ import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabe
 import { generateHTML, buildHeatmapSvg } from '@/html'
 import { parseArgs } from '@/args'
 
+// --- Request body parsing with size limit ---
+
+const MAX_BODY_SIZE = 10 * 1024 // 10KB
+
+async function parseRequestBody<T>(req: IncomingMessage): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let body = ''
+    let size = 0
+
+    req.on('data', (chunk: Buffer) => {
+      size += chunk.length
+      if (size > MAX_BODY_SIZE) {
+        req.destroy()
+        reject(new Error('Request body too large'))
+        return
+      }
+      body += chunk.toString()
+    })
+
+    req.on('end', () => {
+      try {
+        resolve(JSON.parse(body) as T)
+      } catch {
+        reject(new Error('Invalid JSON'))
+      }
+    })
+
+    req.on('error', reject)
+  })
+}
+
 const args = parseArgs(process.argv.slice(2))
 
 if (args.help) {
@@ -109,7 +140,7 @@ function watchGitDir(): void {
 
 // --- HTTP server ---
 
-function handleRequest(req: IncomingMessage, res: ServerResponse): void {
+async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
   if (req.url === '/events') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
@@ -125,54 +156,47 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
 
   const commitMatch = parsed.pathname.match(/^\/api\/commit\/([a-f0-9]+)$/)
   if (commitMatch && req.method === 'PATCH') {
-    let body = ''
-    req.on('data', (chunk: Buffer) => { body += chunk.toString() })
-    req.on('end', () => {
-      try {
-        const { message } = JSON.parse(body)
-        if (typeof message !== 'string' || !message.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Message is required' }))
-          return
-        }
-        rewriteCommitMessage(commitMatch[1], message.trim())
-        const detail = getCommitDetail(commitMatch[1])
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(detail ?? { ok: true }))
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: (err as Error).message }))
+    try {
+      const { message } = await parseRequestBody<{ message: string }>(req)
+      if (typeof message !== 'string' || !message.trim()) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Message is required' }))
+        return
       }
-    })
+      rewriteCommitMessage(commitMatch[1], message.trim())
+      const detail = getCommitDetail(commitMatch[1])
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(detail ?? { ok: true }))
+    } catch (err) {
+      const status = (err as Error).message === 'Request body too large' ? 413 : 500
+      res.writeHead(status, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    }
     return
   }
 
   if (commitMatch && req.method === 'PUT') {
-    let body = ''
-    req.on('data', (chunk: Buffer) => { body += chunk.toString() })
-    req.on('end', () => {
-      try {
-        const { date } = JSON.parse(body)
-        if (typeof date !== 'string' || !date.trim()) {
-          res.writeHead(400, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Date is required' }))
-          return
-        }
-        // Validate it's a parseable date
-        if (isNaN(new Date(date).getTime())) {
-          res.writeHead(400, { 'Content-Type': 'application/json' })
-          res.end(JSON.stringify({ error: 'Invalid date format' }))
-          return
-        }
-        rewriteCommitDate(commitMatch[1], date.trim())
-        const detail = getCommitDetail(commitMatch[1])
-        res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify(detail ?? { ok: true }))
-      } catch (err) {
-        res.writeHead(500, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: (err as Error).message }))
+    try {
+      const { date } = await parseRequestBody<{ date: string }>(req)
+      if (typeof date !== 'string' || !date.trim()) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Date is required' }))
+        return
       }
-    })
+      if (isNaN(new Date(date).getTime())) {
+        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Invalid date format. Expected: YYYY-MM-DDTHH:mm:ss±HH:mm' }))
+        return
+      }
+      rewriteCommitDate(commitMatch[1], date.trim())
+      const detail = getCommitDetail(commitMatch[1])
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify(detail ?? { ok: true }))
+    } catch (err) {
+      const status = (err as Error).message === 'Request body too large' ? 413 : 500
+      res.writeHead(status, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    }
     return
   }
 
