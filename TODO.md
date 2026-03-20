@@ -23,10 +23,13 @@
 
 ## Developer experience
 
-- [ ] **Bundler setup** — use esbuild or similar to bundle server + client, enable minification and tree-shaking
-- [ ] **SCSS** — replace TS template string styles with proper `.scss` files (enabled by bundler)
-- [ ] **Split client.ts** — break ~800 LOC client into smaller modules (tooltip, modal, filters, etc.)
-- [ ] **HTML templating** — replace template string HTML in `html.ts` with a proper templating engine (e.g. EJS, Handlebars) or `.html` files
+- [x] **Bundler setup** — esbuild for server + client bundling with minification
+- [x] **SCSS** — proper `.scss` files with nesting, `&`, `@for` loops
+- [x] **Split client.ts** — Preact components with @preact/signals for reactive state
+- [x] **SVG assets** — real `.svg` files instead of inline template strings
+- [x] **Path aliases** — `@/` imports via tsconfig paths
+- [x] **Watch mode** — `npm run build -- --watch` for development
+- [x] **HTML templating** — client UI uses Preact/JSX components
 - [ ] **Split html.ts** — extract SVG builders and HTML helpers into separate modules
-- [ ] **Live reload** — watch mode with auto-refresh during development
-- [ ] **ESLint** — add ESLint with TypeScript support for consistent code quality
+- [ ] **Biome** — fast linting and formatting for TS/TSX/JSON
+- [ ] **Vitest tests** — unit tests for calendar, git, and state logic
