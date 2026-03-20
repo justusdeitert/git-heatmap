@@ -1,6 +1,6 @@
 {
   "name": "git-heatmap",
-  "version": "0.1.0",
+  "version": "0.6.0",
   "description": "Interactive commit heatmap dashboard for any git repository",
   "type": "module",
   "bin": {
@@ -12,8 +12,10 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.client.json",
-    "prepublishOnly": "tsc && tsc -p tsconfig.client.json"
+    "build": "node --import tsx build.ts",
+    "dev": "node --import tsx build.ts --watch",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "node --import tsx build.ts"
   },
   "keywords": [
     "git",
@@ -31,6 +33,12 @@
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
+    "esbuild": "^0.27.4",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@preact/signals": "^2.8.2",
+    "preact": "^10.29.0"
   }
 }

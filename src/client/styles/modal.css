@@ -1,4 +1,3 @@
-export const modalCSS = `
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -268,12 +267,6 @@ export const modalCSS = `
 .date-edit-form {
   margin: 6px 0 4px;
 }
-.date-edit-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
 .date-edit-input {
   padding: 6px 10px;
   background: var(--card);
@@ -350,4 +343,3 @@ export const modalCSS = `
   opacity: .5;
   cursor: not-allowed;
 }
-`;

@@ -1,4 +1,3 @@
-export const componentsCSS = `
 .badge {
   font-size: 12px;
   padding: 2px 8px;
@@ -57,4 +56,3 @@ export const componentsCSS = `
 .meta { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); margin-top: 12px; }
 .meta-item { display: flex; align-items: center; gap: 4px; }
 .meta-item svg { width: 14px; height: 14px; }
-`;

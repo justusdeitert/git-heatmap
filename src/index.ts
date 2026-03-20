@@ -4,7 +4,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, hasUncommittedChanges, getUncommittedFiles, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, getUncommittedFiles, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
 import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabels, computeStats } from './calendar.js'
 import { generateHTML, buildHeatmapSvg } from './html.js'
 import { parseArgs } from './args.js'
@@ -30,7 +30,7 @@ if (!isInsideRepo()) {
 
 // --- Dashboard builder ---
 
-function buildDashboard(): string {
+function getInitialData() {
   const repoName = getRepoName()
   const remoteUrl = getRemoteUrl()
   const branch = getCurrentBranch()
@@ -45,11 +45,16 @@ function buildDashboard(): string {
   const weeks = buildCalendarWeeks(yearMap, defaultYear)
   const monthLabels = getMonthLabels(weeks)
   const stats = computeStats(commitMap, dates.length)
-  const recentCommits = getRecentCommits()
   const dirtyFiles = getUncommittedFiles()
   const traces = getReflogTraces()
+  const heatmapSvg = buildHeatmapSvg(weeks, monthLabels)
 
-  return generateHTML({ repoName, remoteUrl, weeks, monthLabels, stats, authors, branch, firstCommit, recentCommits, dirtyFiles, traces, availableYears })
+  return { repoName, remoteUrl, branch, stats, authors, firstCommit, availableYears, heatmapSvg, dirtyFiles, traces }
+}
+
+function buildDashboard(): string {
+  const data = getInitialData()
+  return generateHTML(data)
 }
 
 // --- SSE live-reload ---
@@ -184,6 +189,17 @@ function handleRequest(req: IncomingMessage, res: ServerResponse): void {
     setTimeout(() => { watchPaused = false }, 500)
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify({ ...detail, ...editableStatus }))
+    return
+  }
+
+  if (parsed.pathname === '/api/stats') {
+    const dates = getCommitDates()
+    const commitMap = buildCommitMap(dates)
+    const statsData = computeStats(commitMap, dates.length)
+    const dirtyFilesData = getUncommittedFiles()
+    const tracesData = getReflogTraces()
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+    res.end(JSON.stringify({ stats: statsData, dirtyFiles: dirtyFilesData, traces: tracesData }))
     return
   }
 

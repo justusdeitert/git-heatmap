@@ -1,13 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as icons from './icons.js'
-import { CSS } from './styles.js'
-import type { DashboardData, MonthLabel, RecentCommit, ReflogTrace, Stats, Week } from './types.js'
-
-function escapeHtml(str: string): string {
-  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-}
+import type { MonthLabel, Stats, Week } from './types.js'
 
 // --- SVG layout constants ---
 
@@ -59,103 +53,7 @@ function cells(weeks: Week[]): string {
   return rects.join('\n      ')
 }
 
-// --- HTML helpers ---
-
-function formatDate(iso: string | null): string {
-  if (!iso) return 'N/A'
-  return new Date(iso).toLocaleDateString('en', { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
-function statCards(stats: Stats, authors: number): string {
-  const items: [string | number, string][] = [
-    [stats.total.toLocaleString(), 'Total Commits'],
-    [stats.activeDays, 'Active Days (1y)'],
-    [stats.streak, 'Current Streak'],
-    [stats.longest, 'Longest Streak'],
-    [authors, 'Contributors'],
-    [stats.busiestCount, 'Busiest Day'],
-  ]
-
-  return items
-    .map(([value, label]) => `
-      <div class="stat-card">
-        <div class="stat-value">${value}</div>
-        <div class="stat-label">${label}</div>
-      </div>`)
-    .join('')
-}
-
-const LEGEND_SVG = `
-  <svg width="72" height="12">
-    <rect x="0"  y="0" width="12" height="12" rx="2" class="level-0"/>
-    <rect x="15" y="0" width="12" height="12" rx="2" class="level-1"/>
-    <rect x="30" y="0" width="12" height="12" rx="2" class="level-2"/>
-    <rect x="45" y="0" width="12" height="12" rx="2" class="level-3"/>
-    <rect x="60" y="0" width="12" height="12" rx="2" class="level-4"/>
-  </svg>`
-
-function relativeTime(iso: string): string {
-  const ts = new Date(iso).getTime()
-  if (!Number.isFinite(ts)) return 'unknown'
-  const seconds = Math.floor((Date.now() - ts) / 1000)
-  if (seconds < 60) return 'just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  const months = Math.floor(days / 30)
-  return `${months}mo ago`
-}
-
-function fullDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
-function commitList(commits: RecentCommit[]): string {
-  if (commits.length === 0) return '<div class="commit-empty">No commits found</div>'
-  return commits.map(c => {
-    const dateMismatch = c.date !== c.committerDate
-    const warn = dateMismatch ? '<span class="commit-warn" data-tooltip="Author date and committer date differ">&#9888;</span>' : ''
-    const local = !c.onRemote ? '<span class="commit-local" data-tooltip="Not on upstream yet. This commit is still editable.">&#8682;</span>' : ''
-    return `
-    <div class="commit-row">
-      <code class="commit-hash" data-full="${c.fullHash}" title="Click to copy">${c.hash}<svg class="copy-icon" viewBox="0 0 16 16" fill="currentColor"><path d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg></code>
-      <span class="commit-msg">${c.message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
-      <span class="commit-meta">${c.author} &middot; ${fullDateTime(c.date)}${warn}${local}</span>
-    </div>`
-  }).join('')
-}
-
-function tracesPanel(traces: ReflogTrace[]): string {
-  if (traces.length === 0) return ''
-  const rows = traces.map(t => {
-    const msg = t.detail.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    const action = t.action.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    return `<div class="trace-row">
-      <code class="trace-hash">${t.hash}</code>
-      <span class="trace-action">${action}</span>
-      <span class="trace-detail">${msg}</span>
-      <span class="trace-date">${relativeTime(t.date)}</span>
-    </div>`
-  }).join('')
-  return `
-    <div class="card trace-card">
-      <div class="card-title">&#9888; History Traces <span class="trace-count">(${traces.length})</span>
-        <button class="trace-clear-btn" id="clearTracesBtn">Clear traces</button>
-      </div>
-      <div class="trace-list" id="traceList">${rows}</div>
-    </div>`
-}
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const CLIENT_JS = readFileSync(join(__dirname, 'client.js'), 'utf-8')
-const PKG_VERSION: string = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')).version
-
-// --- Page template ---
-
-const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%231f2328' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: light)"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%23e6edf3' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: dark)">`
+// --- Public API ---
 
 export function buildHeatmapSvg(weeks: Week[], labels: MonthLabel[]): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP)
@@ -167,30 +65,30 @@ export function buildHeatmapSvg(weeks: Week[], labels: MonthLabel[]): string {
         </svg>`
 }
 
-function yearSelector(years: number[]): string {
-  if (years.length === 0) return ''
-  if (years.length === 1) {
-    return `<span class="year-single">${years[0]}</span>`
-  }
-  const defaultYear = years[years.length - 1]
-  return '<div class="year-selector" id="yearList">' +
-    years.map(y => `<a class="year-link${y === defaultYear ? ' year-active' : ''}" data-year="${y}">${y}</a>`).join('') +
-    '</div>'
+// --- SPA shell ---
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const CLIENT_JS = readFileSync(join(__dirname, '_client_bundle.js'), 'utf-8')
+const CLIENT_CSS = readFileSync(join(__dirname, '_client_bundle.css'), 'utf-8')
+const PKG_VERSION: string = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf-8')).version
+
+const FAVICON = `<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%231f2328' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%231f2328' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: light)"><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><line x1='0' y1='8' x2='4.5' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/><circle cx='8' cy='8' r='3.5' stroke='%23e6edf3' stroke-width='1.5' fill='none'/><line x1='11.5' y1='8' x2='16' y2='8' stroke='%23e6edf3' stroke-width='1.5' stroke-linecap='round'/></svg>" media="(prefers-color-scheme: dark)">`
+
+interface InitialData {
+  repoName: string
+  remoteUrl: string | null
+  branch: string
+  stats: Stats
+  authors: number
+  firstCommit: string | null
+  availableYears: number[]
+  heatmapSvg: string
+  dirtyFiles: Array<{ status: string; file: string }>
+  traces: Array<{ hash: string; action: string; detail: string; date: string }>
 }
 
-export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, stats, authors, branch, firstCommit, recentCommits, dirtyFiles, traces, availableYears }: DashboardData): string {
-  const now = new Date().toLocaleString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
-  const dirtyBanner = dirtyFiles.length > 0 ? `
-    <div class="dirty-banner">
-      <button class="dirty-toggle" type="button">
-        <span class="dirty-icon">&#9888;</span>
-        <span class="dirty-text">You have ${dirtyFiles.length} uncommitted change${dirtyFiles.length === 1 ? '' : 's'} in your working directory.</span>
-        <svg class="dirty-chevron" viewBox="0 0 16 16" fill="currentColor"><path d="M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z"/></svg>
-      </button>
-      <ul class="dirty-files">
-        ${dirtyFiles.map(f => `<li><code class="dirty-status">${escapeHtml(f.status)}</code>${escapeHtml(f.file)}</li>`).join('')}
-      </ul>
-    </div>` : ''
+export function generateHTML(data: InitialData): string {
+  const payload = JSON.stringify({ ...data, version: PKG_VERSION })
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -198,66 +96,13 @@ export function generateHTML({ repoName, remoteUrl, weeks, monthLabels: labels, 
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google" content="notranslate">
-  <title>${repoName} — Git Heatmap</title>
+  <title>${data.repoName} — Git Heatmap</title>
   ${FAVICON}
-  <style>${CSS}</style>
+  <style>${CLIENT_CSS}</style>
 </head>
 <body style="opacity:0">
-  <div class="container">
-    <header>
-      ${icons.repo}
-      <h1>${repoName} <span>— Git Heatmap</span></h1>
-      <span class="badge">${branch}</span>
-    </header>
-${dirtyBanner}
-    <div class="stats">${statCards(stats, authors)}</div>
-
-    <div class="card">
-      <div class="card-title">Commit Activity${yearSelector(availableYears)}</div>
-      <div class="heatmap-scroll" id="heatmapScroll">
-        ${buildHeatmapSvg(weeks, labels)}
-      </div>
-      <div class="legend">
-        <span class="legend-text">Less</span>${LEGEND_SVG}
-        <span class="legend-text">More</span>
-      </div>
-      <div class="meta">
-        <div class="meta-item">${icons.clock} First commit: ${formatDate(firstCommit)}</div>
-        <div class="meta-item">${icons.dot} ${remoteUrl ?? '<span style="color:var(--accent)">No remote</span>'}</div>
-        <div class="meta-item">${icons.dot} Generated: ${now}</div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-title">${icons.gitCommit} Commits <span class="commit-count" id="commitCount"></span> <span id="dateFilter"></span></div>
-      <div class="commit-list" id="commitList">${commitList(recentCommits)}</div>
-      <div class="pagination" id="pagination"></div>
-    </div>
-${tracesPanel(traces)}
-  </div>
-
-  <footer>Generated by <strong>git-heatmap</strong> v${PKG_VERSION}</footer>
-
-  <div class="tooltip" id="tooltip"></div>
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" id="commitModal">
-      <div class="modal-top-bar">
-        <code class="modal-hash" id="modalHash"></code>
-        <button class="modal-close" id="modalClose">&times;</button>
-      </div>
-      <div id="modalContent"></div>
-    </div>
-  </div>
-  <div class="modal-overlay" id="confirmOverlay">
-    <div class="confirm-modal">
-      <div class="confirm-title">Clear History Traces</div>
-      <div class="confirm-body">This will permanently clear the git reflog and run garbage collection. This action cannot be undone.</div>
-      <div class="confirm-error" id="confirmError"></div>
-      <div class="confirm-actions">
-        <button class="rename-cancel" id="confirmCancel">Cancel</button>
-        <button class="confirm-delete" id="confirmOk">Clear traces</button>
-      </div>
-    </div>
-  </div>
+  <div id="app"></div>
+  <script>window.__DATA__ = ${payload};</script>
   <script>${CLIENT_JS}</script>
 </body>
 </html>`
