@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild'
+import { sassPlugin } from 'esbuild-sass-plugin'
 import { readFileSync, writeFileSync, mkdirSync, chmodSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -17,6 +18,8 @@ async function buildClient(): Promise<void> {
     outdir: 'dist',
     jsx: 'automatic',
     jsxImportSource: 'preact',
+    loader: { '.svg': 'text' },
+    plugins: [sassPlugin()],
   })
 
   // Extract bundled JS and CSS

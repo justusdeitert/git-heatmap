@@ -6,7 +6,7 @@ import {
 import type { CommitDetailData } from '../state'
 import { relTime, formatFullDate, toLocalISOString, toLocalDateTimeValue } from '../utils'
 import { CopyHash } from './CopyHash'
-import { EDIT_SVG } from '../icons'
+import EDIT_SVG from '../icons/edit.svg'
 
 function esc(s: string): string {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')

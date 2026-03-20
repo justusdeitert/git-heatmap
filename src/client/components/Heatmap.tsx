@@ -5,7 +5,8 @@ import {
   firstCommit, remoteUrl, tooltipText, tooltipVisible, tooltipX, tooltipY,
 } from '../state'
 import { formatDate } from '../utils'
-import { CLOCK_ICON, DOT_ICON } from '../icons'
+import CLOCK_ICON from '../icons/clock.svg'
+import DOT_ICON from '../icons/dot.svg'
 
 const LEGEND_SVG = `
   <svg width="72" height="12">

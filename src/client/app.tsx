@@ -3,14 +3,14 @@ import { useEffect } from 'preact/hooks'
 import { initFromServerData, initSSE, closeModal } from './state'
 import type { InitialData } from './state'
 
-// Import all CSS — esbuild bundles these into a single CSS output
-import './styles/variables.css'
-import './styles/base.css'
-import './styles/components.css'
-import './styles/heatmap.css'
-import './styles/commits.css'
-import './styles/modal.css'
-import './styles/trace.css'
+// Import all SCSS — esbuild bundles these into a single CSS output
+import './styles/variables.scss'
+import './styles/base.scss'
+import './styles/components.scss'
+import './styles/heatmap.scss'
+import './styles/commits.scss'
+import './styles/modal.scss'
+import './styles/trace.scss'
 
 // Components
 import { Header, Footer } from './components/Header'

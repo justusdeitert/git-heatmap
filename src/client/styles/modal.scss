@@ -10,9 +10,9 @@
   pointer-events: none;
   transition: opacity 0.15s;
   backdrop-filter: blur(2px);
-}
 
-.modal-overlay.visible { opacity: 1; pointer-events: auto; }
+  &.visible { opacity: 1; pointer-events: auto; }
+}
 
 .modal {
   background: var(--bg-card);
@@ -44,13 +44,11 @@
   padding: 4px;
   transition: color 0.15s;
   margin-left: auto;
+
+  &:hover { color: var(--text); }
 }
 
-.modal-close:hover { color: var(--text); }
-
-.modal-header {
-  margin-bottom: 12px;
-}
+.modal-header { margin-bottom: 12px; }
 
 .modal-hash {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
@@ -64,10 +62,10 @@
   padding: 2px 6px;
   background: rgba(88,166,255,0.1);
   transition: background 0.15s;
-}
 
-.modal-hash:hover { background: rgba(88,166,255,0.2); }
-.modal-hash.hash-copied { color: var(--level-3); }
+  &:hover { background: rgba(88,166,255,0.2); }
+  &.hash-copied { color: var(--level-3); }
+}
 
 .modal-subject {
   font-size: 16px;
@@ -92,34 +90,22 @@
 .modal-meta {
   font-size: 13px;
   margin-bottom: 16px;
-}
 
-.modal-meta-row {
-  padding: 4px 0;
-  line-height: 1.5;
-}
-
-.modal-meta-label {
-  color: var(--text-muted);
-  min-width: 80px;
-  display: inline-block;
-}
-
-.modal-meta-date {
-  color: var(--text-muted);
-  font-size: 12px;
+  &-row { padding: 4px 0; line-height: 1.5; }
+  &-label { color: var(--text-muted); min-width: 80px; display: inline-block; }
+  &-date { color: var(--text-muted); font-size: 12px; }
 }
 
 .modal-stats {
   border-top: 1px solid var(--border);
   padding-top: 12px;
-}
 
-.modal-stats-summary {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  font-weight: 600;
+  &-summary {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
 }
 
 .modal-files {
@@ -130,10 +116,7 @@
   overflow-y: auto;
 }
 
-.modal-file {
-  padding: 2px 0;
-  white-space: pre;
-}
+.modal-file { padding: 2px 0; white-space: pre; }
 
 .stat-filename { color: var(--text); }
 .stat-count { color: var(--text-muted); }
@@ -152,11 +135,10 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
+
+  .modal-subject { flex: 1; min-width: 0; }
 }
-.modal-subject-row .modal-subject {
-  flex: 1;
-  min-width: 0;
-}
+
 .rename-btn {
   flex-shrink: 0;
   background: none;
@@ -168,24 +150,21 @@
   display: flex;
   align-items: center;
   transition: color .15s, border-color .15s;
+
+  &:hover { color: var(--accent); border-color: var(--accent); }
 }
-.rename-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.edit-icon {
-  width: 14px;
-  height: 14px;
-}
-.rename-form {
-  margin: 8px 0 4px;
-}
+
+.edit-icon { width: 14px; height: 14px; }
+
+.rename-form { margin: 8px 0 4px; }
+
 .date-edit-row {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
+
 .rename-input {
   width: 100%;
   min-height: 56px;
@@ -198,18 +177,19 @@
   font-size: 12px;
   resize: vertical;
   box-sizing: border-box;
+
+  &:focus { outline: none; border-color: var(--accent); }
 }
-.rename-input:focus {
-  outline: none;
-  border-color: var(--accent);
-}
+
 .rename-actions {
   display: flex;
   gap: 8px;
   margin-top: 8px;
   justify-content: flex-end;
 }
-.rename-cancel, .rename-save {
+
+.rename-cancel,
+.rename-save {
   padding: 5px 14px;
   border-radius: 6px;
   font-size: 12px;
@@ -218,25 +198,23 @@
   border: 1px solid var(--border);
   transition: opacity .15s;
 }
+
 .rename-cancel {
   background: transparent;
   color: var(--text-muted);
+
+  &:hover { color: var(--text); }
 }
-.rename-cancel:hover {
-  color: var(--text);
-}
+
 .rename-save {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+
+  &:hover { opacity: .85; }
+  &[disabled] { opacity: .5; cursor: not-allowed; }
 }
-.rename-save:hover {
-  opacity: .85;
-}
-.rename-save[disabled] {
-  opacity: .5;
-  cursor: not-allowed;
-}
+
 .rename-error {
   color: #f47067;
   font-size: 12px;
@@ -255,18 +233,14 @@
   vertical-align: middle;
   margin-left: 6px;
   transition: color .15s, border-color .15s;
+
+  &:hover { color: var(--accent); border-color: var(--accent); }
+
+  .edit-icon { width: 12px; height: 12px; }
 }
-.date-edit-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.date-edit-btn .edit-icon {
-  width: 12px;
-  height: 12px;
-}
-.date-edit-form {
-  margin: 6px 0 4px;
-}
+
+.date-edit-form { margin: 6px 0 4px; }
+
 .date-edit-input {
   padding: 6px 10px;
   background: var(--card);
@@ -276,10 +250,8 @@
   font-size: 13px;
   font-family: inherit;
   color-scheme: dark;
-}
-.date-edit-input:focus {
-  outline: none;
-  border-color: var(--accent);
+
+  &:focus { outline: none; border-color: var(--accent); }
 }
 
 .modal-edit-notice {
@@ -304,28 +276,29 @@
   width: 90vw;
   box-shadow: 0 8px 32px rgba(0,0,0,0.4);
 }
-.confirm-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 8px;
-}
+
+.confirm-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+
 .confirm-body {
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 16px;
   line-height: 1.5;
 }
+
 .confirm-error {
   color: #f47067;
   font-size: 12px;
   min-height: 18px;
   margin-bottom: 10px;
 }
+
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
 }
+
 .confirm-delete {
   background: #da3633;
   color: #fff;
@@ -335,11 +308,7 @@
   font-size: 13px;
   cursor: pointer;
   transition: opacity .15s;
-}
-.confirm-delete:hover {
-  opacity: .85;
-}
-.confirm-delete[disabled] {
-  opacity: .5;
-  cursor: not-allowed;
+
+  &:hover { opacity: .85; }
+  &[disabled] { opacity: .5; cursor: not-allowed; }
 }

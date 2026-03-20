@@ -8,9 +8,9 @@
   padding: 8px 0;
   border-bottom: 1px solid var(--border);
   font-size: 13px;
-}
 
-.commit-row:last-child { border-bottom: none; }
+  &:last-child { border-bottom: none; }
+}
 
 .commit-hash {
   font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
@@ -23,14 +23,25 @@
   border-radius: 4px;
   padding: 1px 4px;
   transition: background 0.15s;
+
+  &:hover {
+    background: rgba(88,166,255,0.1);
+
+    .copy-icon { opacity: 1; }
+  }
+
+  &.hash-copied { color: var(--level-3); }
 }
 
-.commit-hash:hover { background: rgba(88,166,255,0.1); }
-.commit-hash.hash-copied { color: var(--level-3); }
+.copy-icon {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.15s;
 
-.copy-icon { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.4; transition: opacity 0.15s; }
-.commit-hash:hover .copy-icon { opacity: 1; }
-.copy-icon.copied { color: var(--level-3); opacity: 1; }
+  &.copied { color: var(--level-3); opacity: 1; }
+}
 
 .commit-msg {
   overflow: hidden;
@@ -40,9 +51,9 @@
   border-radius: 4px;
   padding: 1px 4px;
   transition: color 0.15s;
-}
 
-.commit-msg:hover { color: var(--accent); }
+  &:hover { color: var(--accent); }
+}
 
 .commit-meta {
   font-size: 12px;
@@ -74,27 +85,22 @@
   line-height: 1;
   padding: 0 2px;
   transition: color 0.15s;
-}
 
-.filter-clear:hover { color: var(--text); }
+  &:hover { color: var(--text); }
+}
 
 .commit-empty { padding: 16px 0; color: var(--text-muted); font-size: 13px; }
-
 .commit-count { color: var(--text-muted); font-weight: 400; font-size: 12px; }
 
-.commit-warn {
-  color: #d29922;
+.commit-warn,
+.commit-local {
   margin-left: 6px;
   cursor: help;
   font-size: 13px;
 }
 
-.commit-local {
-  color: var(--text-muted);
-  margin-left: 6px;
-  cursor: help;
-  font-size: 13px;
-}
+.commit-warn { color: #d29922; }
+.commit-local { color: var(--text-muted); }
 
 .pagination {
   display: flex;
@@ -104,9 +110,9 @@
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
-}
 
-.pagination:empty { display: none; }
+  &:empty { display: none; }
+}
 
 .pag-btn {
   background: var(--bg);
@@ -117,9 +123,9 @@
   font-size: 12px;
   cursor: pointer;
   transition: border-color 0.15s;
-}
 
-.pag-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.pag-btn:disabled { opacity: 0.4; cursor: default; }
+  &:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  &:disabled { opacity: 0.4; cursor: default; }
+}
 
 .pag-info { font-size: 12px; color: var(--text-muted); }

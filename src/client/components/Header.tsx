@@ -1,5 +1,5 @@
 import { repoName, branch, version } from '../state'
-import { REPO_ICON } from '../icons'
+import REPO_ICON from '../icons/repo.svg'
 
 export function Header() {
   return (

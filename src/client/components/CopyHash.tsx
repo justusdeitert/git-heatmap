@@ -1,6 +1,7 @@
 import { useRef, useState } from 'preact/hooks'
 import { copyToClipboard } from '../utils'
-import { COPY_SVG, CHECK_SVG } from '../icons'
+import COPY_SVG from '../icons/copy.svg'
+import CHECK_SVG from '../icons/check.svg'
 
 export function CopyHash({ hash, full, class: cls }: { hash: string; full: string; class?: string }) {
   const [copied, setCopied] = useState(false)
