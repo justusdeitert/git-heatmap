@@ -94,6 +94,9 @@ export const modalLoading = signal(false)
 // Confirm dialog
 export const confirmVisible = signal(false)
 
+// Network error
+export const networkError = signal<string | null>(null)
+
 // Tooltip
 export const tooltipText = signal('')
 export const tooltipVisible = signal(false)
@@ -115,28 +118,46 @@ export const version = computed(() => initialData.value?.version ?? '')
 // --- Actions ---
 
 export async function fetchCommits(page: number): Promise<void> {
-  let url = '/api/commits?page=' + page
-  if (activeDate.value) url += '&date=' + activeDate.value
-  const res = await fetch(url)
-  const data: CommitResponse = await res.json()
-  currentPage.value = data.page
-  commits.value = data.commits
-  commitTotal.value = data.total
-  commitTotalPages.value = data.totalPages
+  try {
+    let url = '/api/commits?page=' + page
+    if (activeDate.value) url += '&date=' + activeDate.value
+    const res = await fetch(url)
+    if (!res.ok) throw new Error('Failed to load commits')
+    const data: CommitResponse = await res.json()
+    currentPage.value = data.page
+    commits.value = data.commits
+    commitTotal.value = data.total
+    commitTotalPages.value = data.totalPages
+    networkError.value = null
+  } catch (err) {
+    networkError.value = (err as Error).message || 'Failed to load commits'
+  }
 }
 
 export async function fetchCalendar(year: number): Promise<void> {
-  const res = await fetch('/api/calendar?year=' + year)
-  const data = await res.json()
-  heatmapSvg.value = data.svg
+  try {
+    const res = await fetch('/api/calendar?year=' + year)
+    if (!res.ok) throw new Error('Failed to load calendar')
+    const data = await res.json()
+    heatmapSvg.value = data.svg
+    networkError.value = null
+  } catch (err) {
+    networkError.value = (err as Error).message || 'Failed to load calendar'
+  }
 }
 
 export async function fetchStats(): Promise<void> {
-  const res = await fetch('/api/stats')
-  const data = await res.json()
-  stats.value = data.stats
-  dirtyFiles.value = data.dirtyFiles
-  traces.value = data.traces
+  try {
+    const res = await fetch('/api/stats')
+    if (!res.ok) throw new Error('Failed to load stats')
+    const data = await res.json()
+    stats.value = data.stats
+    dirtyFiles.value = data.dirtyFiles
+    traces.value = data.traces
+    networkError.value = null
+  } catch (err) {
+    networkError.value = (err as Error).message || 'Failed to load stats'
+  }
 }
 
 export function filterByDate(date: string): void {

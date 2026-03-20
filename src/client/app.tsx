@@ -17,6 +17,7 @@ import { Heatmap } from '@/client/components/Heatmap'
 import { CommitList } from '@/client/components/CommitList'
 import { CommitModal } from '@/client/components/CommitModal'
 import { DirtyBanner } from '@/client/components/DirtyBanner'
+import { ErrorBanner } from '@/client/components/ErrorBanner'
 import { ReflogPanel, ConfirmDialog } from '@/client/components/ReflogPanel'
 import { Tooltip } from '@/client/components/Tooltip'
 
@@ -33,6 +34,7 @@ function App() {
     <>
       <div class="container">
         <Header />
+        <ErrorBanner />
         <DirtyBanner />
         <StatsCards />
         <Heatmap />

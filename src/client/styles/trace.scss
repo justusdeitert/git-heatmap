@@ -71,6 +71,39 @@
   font-weight: 600;
 }
 
+.error-banner {
+  background: rgba(244, 112, 103, 0.08);
+  border: 1px solid rgba(244, 112, 103, 0.3);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  color: #f47067;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.error-icon {
+  flex-shrink: 0;
+
+  svg { width: 16px; height: 16px; }
+}
+
+.error-text { flex: 1; }
+
+.error-dismiss {
+  background: none;
+  border: none;
+  color: #f47067;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  opacity: 0.7;
+
+  &:hover { opacity: 1; }
+}
+
 .trace-card .card-title {
   display: flex;
   align-items: center;
