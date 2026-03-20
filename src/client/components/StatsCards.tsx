@@ -1,5 +1,5 @@
-import { stats, authors } from '../state'
-import type { StatsData } from '../state'
+import { stats, authors } from '@/client/state'
+import type { StatsData } from '@/client/state'
 
 export function StatsCards() {
   const s = stats.value

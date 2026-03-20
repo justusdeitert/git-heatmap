@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
-import { dirtyFiles } from '../state'
-import type { DirtyFile } from '../state'
-import CHEVRON_SVG from '../icons/chevron.svg'
+import { dirtyFiles } from '@/client/state'
+import type { DirtyFile } from '@/client/state'
+import CHEVRON_SVG from '@/client/icons/chevron.svg'
 
 export function DirtyBanner() {
   const files = dirtyFiles.value

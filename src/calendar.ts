@@ -1,4 +1,4 @@
-import type { CommitMap, Week, MonthLabel, Stats } from './types.js'
+import type { CommitMap, Week, MonthLabel, Stats } from '@/types'
 
 /** Formats a Date as 'YYYY-MM-DD' using local time. */
 function localDateStr(d: Date): string {

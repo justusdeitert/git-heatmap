@@ -1,4 +1,4 @@
-import { tooltipText, tooltipVisible, tooltipX, tooltipY } from '../state'
+import { tooltipText, tooltipVisible, tooltipX, tooltipY } from '@/client/state'
 
 export function Tooltip() {
   return (

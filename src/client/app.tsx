@@ -1,26 +1,24 @@
 import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
-import { initFromServerData, initSSE, closeModal } from './state'
-import type { InitialData } from './state'
+import { initFromServerData, initSSE, closeModal } from '@/client/state'
+import type { InitialData } from '@/client/state'
 
-// Import all SCSS — esbuild bundles these into a single CSS output
-import './styles/variables.scss'
-import './styles/base.scss'
-import './styles/components.scss'
-import './styles/heatmap.scss'
-import './styles/commits.scss'
-import './styles/modal.scss'
-import './styles/trace.scss'
+import '@/client/styles/variables.scss'
+import '@/client/styles/base.scss'
+import '@/client/styles/components.scss'
+import '@/client/styles/heatmap.scss'
+import '@/client/styles/commits.scss'
+import '@/client/styles/modal.scss'
+import '@/client/styles/trace.scss'
 
-// Components
-import { Header, Footer } from './components/Header'
-import { StatsCards } from './components/StatsCards'
-import { Heatmap } from './components/Heatmap'
-import { CommitList } from './components/CommitList'
-import { CommitModal } from './components/CommitModal'
-import { DirtyBanner } from './components/DirtyBanner'
-import { ReflogPanel, ConfirmDialog } from './components/ReflogPanel'
-import { Tooltip } from './components/Tooltip'
+import { Header, Footer } from '@/client/components/Header'
+import { StatsCards } from '@/client/components/StatsCards'
+import { Heatmap } from '@/client/components/Heatmap'
+import { CommitList } from '@/client/components/CommitList'
+import { CommitModal } from '@/client/components/CommitModal'
+import { DirtyBanner } from '@/client/components/DirtyBanner'
+import { ReflogPanel, ConfirmDialog } from '@/client/components/ReflogPanel'
+import { Tooltip } from '@/client/components/Tooltip'
 
 function App() {
   useEffect(() => {

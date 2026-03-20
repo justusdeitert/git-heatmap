@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import type { MonthLabel, Stats, Week } from './types.js'
+import type { MonthLabel, Stats, Week } from '@/types'
 
 // --- SVG layout constants ---
 

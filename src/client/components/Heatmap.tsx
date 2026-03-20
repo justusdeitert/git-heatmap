@@ -3,10 +3,10 @@ import {
   heatmapSvg, activeDate, activeYear, availableYears,
   selectYear, filterByDate, clearDateFilter,
   firstCommit, remoteUrl, tooltipText, tooltipVisible, tooltipX, tooltipY,
-} from '../state'
-import { formatDate } from '../utils'
-import CLOCK_ICON from '../icons/clock.svg'
-import DOT_ICON from '../icons/dot.svg'
+} from '@/client/state'
+import { formatDate } from '@/client/utils'
+import CLOCK_ICON from '@/client/icons/clock.svg'
+import DOT_ICON from '@/client/icons/dot.svg'
 
 const LEGEND_SVG = `
   <svg width="72" height="12">

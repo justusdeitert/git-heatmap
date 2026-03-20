@@ -2,11 +2,11 @@ import { useState, useRef, useEffect } from 'preact/hooks'
 import {
   modalVisible, modalData, modalLoading,
   closeModal, renameCommit, updateCommitDate,
-} from '../state'
-import type { CommitDetailData } from '../state'
-import { relTime, formatFullDate, toLocalISOString, toLocalDateTimeValue } from '../utils'
-import { CopyHash } from './CopyHash'
-import EDIT_SVG from '../icons/edit.svg'
+} from '@/client/state'
+import type { CommitDetailData } from '@/client/state'
+import { relTime, formatFullDate, toLocalISOString, toLocalDateTimeValue } from '@/client/utils'
+import { CopyHash } from '@/client/components/CopyHash'
+import EDIT_SVG from '@/client/icons/edit.svg'
 
 function esc(s: string): string {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')

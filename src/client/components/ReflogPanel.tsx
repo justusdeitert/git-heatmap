@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
-import { traces, confirmVisible, clearTraces } from '../state'
-import type { ReflogEntry } from '../state'
-import { relTime } from '../utils'
+import { traces, confirmVisible, clearTraces } from '@/client/state'
+import type { ReflogEntry } from '@/client/state'
+import { relTime } from '@/client/utils'
 
 export function ReflogPanel() {
   const entries = traces.value

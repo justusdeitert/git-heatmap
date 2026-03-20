@@ -1,5 +1,5 @@
-import { repoName, branch, version } from '../state'
-import REPO_ICON from '../icons/repo.svg'
+import { repoName, branch, version } from '@/client/state'
+import REPO_ICON from '@/client/icons/repo.svg'
 
 export function Header() {
   return (

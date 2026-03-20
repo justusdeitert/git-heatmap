@@ -2,11 +2,11 @@ import {
   commits, commitTotal, commitTotalPages, currentPage, activeDate,
   fetchCommits, clearDateFilter, showCommitDetail,
   tooltipText, tooltipVisible, tooltipX, tooltipY,
-} from '../state'
-import type { CommitEntry } from '../state'
-import { fullDateTime } from '../utils'
-import { CopyHash } from './CopyHash'
-import GIT_COMMIT_ICON from '../icons/git-commit.svg'
+} from '@/client/state'
+import type { CommitEntry } from '@/client/state'
+import { fullDateTime } from '@/client/utils'
+import { CopyHash } from '@/client/components/CopyHash'
+import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg'
 
 function esc(s: string): string {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')

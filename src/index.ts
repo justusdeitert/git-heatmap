@@ -4,10 +4,10 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { exec } from 'node:child_process'
 import { watch } from 'node:fs'
 import { join } from 'node:path'
-import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, getUncommittedFiles, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from './git.js'
-import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabels, computeStats } from './calendar.js'
-import { generateHTML, buildHeatmapSvg } from './html.js'
-import { parseArgs } from './args.js'
+import { isInsideRepo, getGitDir, getRepoName, getRemoteUrl, getCommitDates, getFirstCommitDate, getAuthorCount, getCurrentBranch, getRecentCommits, getCommitCount, getCommitsByDate, getCommitDetail, getCommitEditableStatus, getUncommittedFiles, rewriteCommitMessage, rewriteCommitDate, getReflogTraces, clearReflog } from '@/git'
+import { buildCommitMap, buildCalendarWeeks, filterCommitMapByYear, getMonthLabels, computeStats } from '@/calendar'
+import { generateHTML, buildHeatmapSvg } from '@/html'
+import { parseArgs } from '@/args'
 
 const args = parseArgs(process.argv.slice(2))
 
