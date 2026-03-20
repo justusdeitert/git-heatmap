@@ -21,6 +21,10 @@ import { ErrorBanner } from '@/client/components/ErrorBanner'
 import { ReflogPanel, ConfirmDialog } from '@/client/components/ReflogPanel'
 import { Tooltip } from '@/client/components/Tooltip'
 
+declare global {
+  interface Window { __DATA__: InitialData }
+}
+
 function App() {
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
@@ -50,7 +54,7 @@ function App() {
 }
 
 // Boot: read server-injected data and mount
-const data: InitialData = (window as any).__DATA__
+const data = window.__DATA__
 initFromServerData(data)
 initSSE()
 render(<App />, document.getElementById('app')!)
