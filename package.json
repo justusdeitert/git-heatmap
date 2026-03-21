@@ -15,6 +15,10 @@
     "build": "node --import tsx build.ts",
     "dev": "node --import tsx build.ts --watch",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "lint:fix": "biome check --fix .",
+    "format": "biome format --write .",
+    "check": "biome check --fix . && tsc --noEmit",
     "prepublishOnly": "node --import tsx build.ts"
   },
   "keywords": [
@@ -32,6 +36,7 @@
     "node": ">=18"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.8",
     "@types/node": "^25.5.0",
     "esbuild": "^0.27.4",
     "esbuild-sass-plugin": "^3.7.0",

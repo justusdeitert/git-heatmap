@@ -31,5 +31,5 @@
 - [x] **Watch mode** — `npm run build -- --watch` for development
 - [x] **HTML templating** — client UI uses Preact/JSX components
 - [ ] **Split html.ts** — extract SVG builders and HTML helpers into separate modules
-- [ ] **Biome** — fast linting and formatting for TS/TSX/JSON
+- [x] **Biome** — fast linting and formatting for TS/TSX/JSON
 - [ ] **Vitest tests** — unit tests for calendar, git, and state logic

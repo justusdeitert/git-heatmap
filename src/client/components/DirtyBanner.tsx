@@ -1,13 +1,12 @@
-import { useState } from 'preact/hooks'
-import { dirtyFiles } from '@/client/state'
-import type { DirtyFile } from '@/client/state'
-import CHEVRON_SVG from '@/client/icons/chevron.svg'
+import { useState } from 'preact/hooks';
+import CHEVRON_SVG from '@/client/icons/chevron.svg';
+import { dirtyFiles } from '@/client/state';
 
 export function DirtyBanner() {
-  const files = dirtyFiles.value
-  if (files.length === 0) return null
+  const files = dirtyFiles.value;
+  if (files.length === 0) return null;
 
-  const [expanded, setExpanded] = useState(false)
+  const [expanded, setExpanded] = useState(false);
 
   return (
     <div class={`dirty-banner${expanded ? ' expanded' : ''}`}>
@@ -20,9 +19,12 @@ export function DirtyBanner() {
       </button>
       <ul class="dirty-files" style={expanded ? { display: 'block' } : undefined}>
         {files.map((f, i) => (
-          <li key={i}><code class="dirty-status">{f.status}</code>{f.file}</li>
+          <li key={i}>
+            <code class="dirty-status">{f.status}</code>
+            {f.file}
+          </li>
         ))}
       </ul>
     </div>
-  )
+  );
 }

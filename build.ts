@@ -1,9 +1,8 @@
-import * as esbuild from 'esbuild'
-import { sassPlugin } from 'esbuild-sass-plugin'
-import { readFileSync, writeFileSync, mkdirSync, chmodSync } from 'node:fs'
-import { join } from 'node:path'
+import { chmodSync, mkdirSync, writeFileSync } from 'node:fs';
+import * as esbuild from 'esbuild';
+import { sassPlugin } from 'esbuild-sass-plugin';
 
-const isWatch = process.argv.includes('--watch')
+const isWatch = process.argv.includes('--watch');
 
 // --- Step 1: Bundle client (Preact + CSS) into a single JS string ---
 
@@ -20,19 +19,19 @@ async function buildClient(): Promise<void> {
     jsxImportSource: 'preact',
     loader: { '.svg': 'text' },
     plugins: [sassPlugin()],
-  })
+  });
 
   // Extract bundled JS and CSS
-  const jsOut = clientResult.outputFiles.find(f => f.path.endsWith('.js'))
-  const cssOut = clientResult.outputFiles.find(f => f.path.endsWith('.css'))
+  const jsOut = clientResult.outputFiles.find((f) => f.path.endsWith('.js'));
+  const cssOut = clientResult.outputFiles.find((f) => f.path.endsWith('.css'));
 
-  const clientJS = jsOut?.text ?? ''
-  const clientCSS = cssOut?.text ?? ''
+  const clientJS = jsOut?.text ?? '';
+  const clientCSS = cssOut?.text ?? '';
 
   // Write as importable modules for the server build
-  mkdirSync('dist', { recursive: true })
-  writeFileSync('dist/_client_bundle.js', clientJS)
-  writeFileSync('dist/_client_bundle.css', clientCSS)
+  mkdirSync('dist', { recursive: true });
+  writeFileSync('dist/_client_bundle.js', clientJS);
+  writeFileSync('dist/_client_bundle.css', clientCSS);
 }
 
 // --- Step 2: Bundle server code (Node ESM) ---
@@ -46,16 +45,16 @@ async function buildServer(): Promise<void> {
     platform: 'node',
     outdir: 'dist',
     packages: 'external',
-  })
+  });
 }
 
 // --- Main ---
 
 async function build(): Promise<void> {
-  await buildClient()
-  await buildServer()
-  chmodSync('dist/index.js', 0o755)
-  console.log('  ✓ Build complete')
+  await buildClient();
+  await buildServer();
+  chmodSync('dist/index.js', 0o755);
+  console.log('  ✓ Build complete');
 }
 
 if (isWatch) {
@@ -68,17 +67,19 @@ if (isWatch) {
     platform: 'node',
     outdir: 'dist',
     packages: 'external',
-    plugins: [{
-      name: 'rebuild-client',
-      setup(build) {
-        build.onStart(async () => {
-          await buildClient()
-        })
-      }
-    }]
-  })
-  await ctx.watch()
-  console.log('  ● Watching for changes...')
+    plugins: [
+      {
+        name: 'rebuild-client',
+        setup(build) {
+          build.onStart(async () => {
+            await buildClient();
+          });
+        },
+      },
+    ],
+  });
+  await ctx.watch();
+  console.log('  ● Watching for changes...');
 } else {
-  await build()
+  await build();
 }

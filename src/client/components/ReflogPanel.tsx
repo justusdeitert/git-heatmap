@@ -1,17 +1,21 @@
-import { useState } from 'preact/hooks'
-import { traces, confirmVisible, clearTraces } from '@/client/state'
-import type { ReflogEntry } from '@/client/state'
-import { relTime } from '@/client/utils'
+import { useState } from 'preact/hooks';
+import { clearTraces, confirmVisible, traces } from '@/client/state';
+import { relTime } from '@/client/utils';
 
 export function ReflogPanel() {
-  const entries = traces.value
-  if (entries.length === 0) return null
+  const entries = traces.value;
+  if (entries.length === 0) return null;
 
   return (
     <div class="card trace-card">
       <div class="card-title">
         &#9888; History Traces <span class="trace-count">({entries.length})</span>
-        <button class="trace-clear-btn" onClick={() => { confirmVisible.value = true }}>
+        <button
+          class="trace-clear-btn"
+          onClick={() => {
+            confirmVisible.value = true;
+          }}
+        >
           Clear traces
         </button>
       </div>
@@ -26,35 +30,37 @@ export function ReflogPanel() {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 export function ConfirmDialog() {
-  const visible = confirmVisible.value
-  const [error, setError] = useState('')
-  const [clearing, setClearing] = useState(false)
+  const visible = confirmVisible.value;
+  const [error, setError] = useState('');
+  const [clearing, setClearing] = useState(false);
 
   const handleClear = async () => {
-    setClearing(true)
-    setError('')
+    setClearing(true);
+    setError('');
     try {
-      await clearTraces()
+      await clearTraces();
     } catch (err) {
-      setError('Failed to clear traces: ' + (err as Error).message)
+      setError(`Failed to clear traces: ${(err as Error).message}`);
     } finally {
-      setClearing(false)
+      setClearing(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    confirmVisible.value = false
-    setError('')
-  }
+    confirmVisible.value = false;
+    setError('');
+  };
 
   return (
     <div
       class={`modal-overlay${visible ? ' visible' : ''}`}
-      onClick={(e: MouseEvent) => { if (e.target === e.currentTarget) handleClose() }}
+      onClick={(e: MouseEvent) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
     >
       <div class="confirm-modal">
         <div class="confirm-title">Clear History Traces</div>
@@ -63,12 +69,14 @@ export function ConfirmDialog() {
         </div>
         {error && <div class="confirm-error">{error}</div>}
         <div class="confirm-actions">
-          <button class="rename-cancel" onClick={handleClose}>Cancel</button>
+          <button class="rename-cancel" onClick={handleClose}>
+            Cancel
+          </button>
           <button class="confirm-delete" disabled={clearing} onClick={handleClear}>
             {clearing ? 'Clearing...' : 'Clear traces'}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }

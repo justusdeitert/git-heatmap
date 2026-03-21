@@ -1,9 +1,8 @@
-import { stats, authors } from '@/client/state'
-import type { StatsData } from '@/client/state'
+import { authors, stats } from '@/client/state';
 
 export function StatsCards() {
-  const s = stats.value
-  if (!s) return null
+  const s = stats.value;
+  if (!s) return null;
 
   const items: [string | number, string][] = [
     [s.total.toLocaleString(), 'Total Commits'],
@@ -12,7 +11,7 @@ export function StatsCards() {
     [s.longest, 'Longest Streak'],
     [authors.value, 'Contributors'],
     [s.busiestCount, 'Busiest Day'],
-  ]
+  ];
 
   return (
     <div class="stats">
@@ -23,5 +22,5 @@ export function StatsCards() {
         </div>
       ))}
     </div>
-  )
+  );
 }
