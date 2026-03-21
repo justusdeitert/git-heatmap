@@ -240,6 +240,11 @@ function handleCalendar(res: ServerResponse, searchParams: URLSearchParams): voi
     return
   }
   const year = parseInt(yearParam, 10)
+  if (year < 1970 || year > new Date().getFullYear() + 1) {
+    res.writeHead(400, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: 'year out of range' }))
+    return
+  }
   try {
     const dates = getCommitDates()
     const fullMap = buildCommitMap(dates)
