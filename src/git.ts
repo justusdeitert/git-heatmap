@@ -160,6 +160,9 @@ export function getCommitDetail(hash: string): CommitDetail | null {
 export function getCommitsByDate(date: string): RawCommit[] {
   const unpushed = getUnpushedCommitSet()
   const sep = '---GD---'
+  // Use ±2 day window for the git query to account for timezone differences
+  // (e.g. a commit at 23:00 UTC-12 could appear as the next day in UTC+12).
+  // The exact date match is done by the .filter() at the end using the author's original timezone.
   const d = new Date(date + 'T12:00:00')
   const prev = new Date(d); prev.setDate(prev.getDate() - 2)
   const next = new Date(d); next.setDate(next.getDate() + 2)
