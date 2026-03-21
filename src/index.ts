@@ -201,29 +201,39 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   if (commitMatch) {
-    const detail = getCommitDetail(commitMatch[1])
-    if (!detail) {
-      res.writeHead(404, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ error: 'Commit not found' }))
-      return
+    try {
+      const detail = getCommitDetail(commitMatch[1])
+      if (!detail) {
+        res.writeHead(404, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: 'Commit not found' }))
+        return
+      }
+      watchPaused = true
+      const editableStatus = getCommitEditableStatus(commitMatch[1])
+      // Keep paused past the 300ms debounce window so async watcher events are ignored
+      setTimeout(() => { watchPaused = false }, 500)
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify({ ...detail, ...editableStatus }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
     }
-    watchPaused = true
-    const editableStatus = getCommitEditableStatus(commitMatch[1])
-    // Keep paused past the 300ms debounce window so async watcher events are ignored
-    setTimeout(() => { watchPaused = false }, 500)
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ ...detail, ...editableStatus }))
     return
   }
 
   if (parsed.pathname === '/api/stats') {
-    const dates = getCommitDates()
-    const commitMap = buildCommitMap(dates)
-    const statsData = computeStats(commitMap, dates.length)
-    const dirtyFilesData = getUncommittedFiles()
-    const tracesData = getReflogTraces()
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ stats: statsData, dirtyFiles: dirtyFilesData, traces: tracesData }))
+    try {
+      const dates = getCommitDates()
+      const commitMap = buildCommitMap(dates)
+      const statsData = computeStats(commitMap, dates.length)
+      const dirtyFilesData = getUncommittedFiles()
+      const tracesData = getReflogTraces()
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify({ stats: statsData, dirtyFiles: dirtyFilesData, traces: tracesData }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    }
     return
   }
 
@@ -235,37 +245,47 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
       return
     }
     const year = parseInt(yearParam, 10)
-    const dates = getCommitDates()
-    const fullMap = buildCommitMap(dates)
+    try {
+      const dates = getCommitDates()
+      const fullMap = buildCommitMap(dates)
 
-    const yearMap = filterCommitMapByYear(fullMap, year)
-    const calWeeks = buildCalendarWeeks(yearMap, year)
-    const calLabels = getMonthLabels(calWeeks)
+      const yearMap = filterCommitMapByYear(fullMap, year)
+      const calWeeks = buildCalendarWeeks(yearMap, year)
+      const calLabels = getMonthLabels(calWeeks)
 
-    const svg = buildHeatmapSvg(calWeeks, calLabels)
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ svg }))
+      const svg = buildHeatmapSvg(calWeeks, calLabels)
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify({ svg }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    }
     return
   }
 
   if (parsed.pathname === '/api/commits') {
-    const page = Math.max(1, parseInt(parsed.searchParams.get('page') ?? '1', 10) || 1)
-    const date = parsed.searchParams.get('date')
-    const perPage = 20
+    try {
+      const page = Math.max(1, parseInt(parsed.searchParams.get('page') ?? '1', 10) || 1)
+      const date = parsed.searchParams.get('date')
+      const perPage = 20
 
-    let total: number
-    let commits: ReturnType<typeof getRecentCommits>
-    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const all = getCommitsByDate(date)
-      total = all.length
-      commits = all.slice((page - 1) * perPage, page * perPage)
-    } else {
-      total = getCommitCount()
-      commits = getRecentCommits(perPage, (page - 1) * perPage)
+      let total: number
+      let commits: ReturnType<typeof getRecentCommits>
+      if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        const all = getCommitsByDate(date)
+        total = all.length
+        commits = all.slice((page - 1) * perPage, page * perPage)
+      } else {
+        total = getCommitCount()
+        commits = getRecentCommits(perPage, (page - 1) * perPage)
+      }
+
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
     }
-
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
     return
   }
 
@@ -281,9 +301,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   }
 
   if (parsed.pathname === '/api/reflog' && req.method === 'GET') {
-    const traces = getReflogTraces()
-    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ traces }))
+    try {
+      const traces = getReflogTraces()
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
+      res.end(JSON.stringify({ traces }))
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: (err as Error).message }))
+    }
     return
   }
 
@@ -293,11 +318,17 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
     return
   }
 
-  res.writeHead(200, {
-    'Content-Type': 'text/html; charset=utf-8',
-    'Cache-Control': 'no-store',
-  })
-  res.end(buildDashboard())
+  try {
+    const html = buildDashboard()
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-store',
+    })
+    res.end(html)
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' })
+    res.end('Internal Server Error: ' + (err as Error).message)
+  }
 }
 
 function openBrowser(url: string): void {
