@@ -19,21 +19,25 @@ Interactive commit heatmap dashboard for any git repository.
 - Auto-opens browser, stops on Ctrl+C
 - Minimal dependencies (Preact + signals, uses `node:http`)
 
-## Install
+## Quick Start
+
+Run inside any git repository — no install needed:
 
 ```bash
-npm install git-heatmap
+npx git-heatmap
 ```
 
-## Usage
+Automatically opens your browser at `http://127.0.0.1:3333`. Press Ctrl+C to stop.
 
-Run inside any git repository:
+### Global Install
+
+For frequent use, install globally:
 
 ```bash
-git-heatmap
+npm install -g git-heatmap
 ```
 
-Opens `http://127.0.0.1:3333` in your browser. Refresh the page to see the latest data. Press Ctrl+C to stop.
+Then simply run `git-heatmap` in any repo.
 
 ### Options
 
@@ -48,12 +52,6 @@ Examples:
 ```bash
 git-heatmap --port 4000
 git-heatmap --no-open
-```
-
-### Run without installing
-
-```bash
-npx git-heatmap
 ```
 
 ## Project Structure
