@@ -6,7 +6,7 @@ Interactive commit heatmap dashboard for any git repository.
 [![license](https://img.shields.io/npm/l/git-heatmap?style=flat-square)](https://github.com/justusdeitert/git-heatmap/blob/main/LICENSE)
 [![node](https://img.shields.io/node/v/git-heatmap?style=flat-square)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square)](https://github.com/justusdeitert/git-heatmap/blob/main/tsconfig.json)
-[![dependencies](https://img.shields.io/badge/dependencies-2-brightgreen?style=flat-square)](#)
+[![dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)](#)
 [![dark/light mode](https://img.shields.io/badge/theme-dark%20%2F%20light-858585?style=flat-square)](#)
 
 ## Features
