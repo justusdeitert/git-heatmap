@@ -40,3 +40,7 @@ export function toLocalDateTimeValue(iso: string): string {
 export async function copyToClipboard(text: string): Promise<void> {
   await navigator.clipboard.writeText(text)
 }
+
+export function esc(s: string): string {
+  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}

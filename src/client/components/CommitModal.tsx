@@ -4,13 +4,9 @@ import {
   closeModal, renameCommit, updateCommitDate,
 } from '@/client/state'
 import type { CommitDetailData } from '@/client/state'
-import { relTime, formatFullDate, toLocalISOString, toLocalDateTimeValue } from '@/client/utils'
+import { relTime, formatFullDate, toLocalISOString, toLocalDateTimeValue, esc } from '@/client/utils'
 import { CopyHash } from '@/client/components/CopyHash'
 import EDIT_SVG from '@/client/icons/edit.svg'
-
-function esc(s: string): string {
-  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
 
 function colorizeStatLine(line: string): string {
   const escaped = esc(line)

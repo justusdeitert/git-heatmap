@@ -8,10 +8,6 @@ import { fullDateTime } from '@/client/utils'
 import { CopyHash } from '@/client/components/CopyHash'
 import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg'
 
-function esc(s: string): string {
-  return s.replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
 function CommitRow({ commit }: { commit: CommitEntry }) {
   const dateMismatch = commit.date !== commit.committerDate
   const openDetail = () => showCommitDetail(commit.fullHash)
