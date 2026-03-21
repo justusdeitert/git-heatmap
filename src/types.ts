@@ -25,7 +25,7 @@ export interface Stats {
   busiestCount: number
 }
 
-export interface RecentCommit {
+export interface CommitEntry {
   hash: string
   fullHash: string
   message: string
@@ -56,7 +56,7 @@ export interface DashboardData {
   authors: number
   branch: string
   firstCommit: string | null
-  recentCommits: RecentCommit[]
+  recentCommits: CommitEntry[]
   dirtyFiles: UncommittedFile[]
   traces: ReflogTrace[]
   availableYears: number[]

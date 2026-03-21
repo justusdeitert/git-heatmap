@@ -2,6 +2,7 @@ import { exec, execSync } from 'node:child_process'
 import { writeFileSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import type { CommitEntry } from '@/types'
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim()
 const execAsync = (cmd: string): Promise<void> => new Promise((resolve, reject) => {
@@ -63,16 +64,6 @@ export function getCurrentBranch(): string {
   return git('git branch --show-current')
 }
 
-export interface RawCommit {
-  hash: string
-  fullHash: string
-  message: string
-  author: string
-  date: string
-  committerDate: string
-  onRemote: boolean
-}
-
 export interface CommitDetail {
   hash: string
   fullHash: string
@@ -122,7 +113,7 @@ function getUnpushedCommitSet(): Set<string> | null {
   }
 }
 
-export function getRecentCommits(count = 20, skip = 0): RawCommit[] {
+export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
   const unpushed = getUnpushedCommitSet()
   const sep = '---GD---'
   const raw = git(`git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --skip=${skip} -${count}`)
@@ -157,7 +148,7 @@ export function getCommitDetail(hash: string): CommitDetail | null {
   }
 }
 
-export function getCommitsByDate(date: string): RawCommit[] {
+export function getCommitsByDate(date: string): CommitEntry[] {
   const unpushed = getUnpushedCommitSet()
   const sep = '---GD---'
   // Use ±2 day window for the git query to account for timezone differences

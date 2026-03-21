@@ -1,16 +1,9 @@
 import { signal, computed } from '@preact/signals'
+import type { CommitEntry } from '@/types'
 
 // --- Types ---
 
-export interface CommitEntry {
-  hash: string
-  fullHash: string
-  message: string
-  author: string
-  date: string
-  committerDate: string
-  onRemote: boolean
-}
+export type { CommitEntry }
 
 export interface CommitResponse {
   commits: CommitEntry[]
