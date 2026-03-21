@@ -189,8 +189,7 @@ export function getUncommittedFiles(): UncommittedFile[] {
   const output = execSync('git --no-optional-locks status --porcelain', { encoding: 'utf8' }).trim()
   if (!output) return []
   return output.split('\n').map(line => {
-    // Format: "XY filename" where XY is 2-char status, then whitespace, then filename
-    const status = line.slice(0, 2).trim() || '?'
+    const status = line.slice(0, 2).trim()
     const file = line.slice(2).trimStart()
     return { status, file }
   })
