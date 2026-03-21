@@ -20,7 +20,7 @@ export function CopyHash({ hash, full, class: cls }: { hash: string; full: strin
       class={`commit-hash${copied ? ' hash-copied' : ''}${cls ? ' ' + cls : ''}`}
       title="Click to copy"
       onClick={handleCopy}
-      dangerouslySetInnerHTML={{ __html: (copied ? full : hash) + ' ' + (copied ? CHECK_SVG : COPY_SVG) }}
+      dangerouslySetInnerHTML={{ __html: hash + ' ' + (copied ? CHECK_SVG : COPY_SVG) }}
     />
   )
 }
