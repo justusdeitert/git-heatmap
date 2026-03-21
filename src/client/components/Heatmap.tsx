@@ -28,51 +28,60 @@ function positionTooltipLeftOfCursor(e: MouseEvent): void {
 export function Heatmap() {
   const scrollRef = useRef<HTMLDivElement>(null)
 
-  // Bind heatmap cell handlers after SVG renders
+  // Event delegation on container — no per-cell listeners needed
   useEffect(() => {
     const container = scrollRef.current
     if (!container) return
 
-    const cells = container.querySelectorAll<HTMLElement>('.day')
-    const handlers: Array<{ el: HTMLElement; events: Array<[string, EventListener]> }> = []
-
-    cells.forEach(el => {
-      const eventList: Array<[string, EventListener]> = []
-
-      const onEnter = () => {
-        tooltipText.value = el.dataset.tooltip ?? ''
-        tooltipVisible.value = true
+    const onEnter = (e: Event) => {
+      const el = (e.target as HTMLElement).closest('.day') as HTMLElement | null
+      if (!el) return
+      tooltipText.value = el.dataset.tooltip ?? ''
+      tooltipVisible.value = true
+    }
+    const onMove = (e: Event) => {
+      if (!(e.target as HTMLElement).closest('.day')) return
+      positionTooltipLeftOfCursor(e as MouseEvent)
+    }
+    const onLeave = (e: Event) => {
+      const el = e.target as HTMLElement
+      if (!el.closest('.day')) return
+      const related = (e as MouseEvent).relatedTarget as HTMLElement | null
+      if (related?.closest('.day') === el.closest('.day')) return
+      tooltipVisible.value = false
+    }
+    const onClick = (e: Event) => {
+      const el = (e.target as HTMLElement).closest('.day') as HTMLElement | null
+      if (!el) return
+      const date = el.dataset.date
+      if (!date) return
+      if (activeDate.value === date) {
+        clearDateFilter()
+      } else {
+        filterByDate(date)
       }
-      const onMove = (e: Event) => positionTooltipLeftOfCursor(e as MouseEvent)
-      const onLeave = () => { tooltipVisible.value = false }
-      const onClick = () => {
-        const date = el.dataset.date
-        if (!date) return
-        if (activeDate.value === date) {
-          clearDateFilter()
-        } else {
-          filterByDate(date)
-        }
-      }
+    }
 
-      el.addEventListener('mouseenter', onEnter)
-      el.addEventListener('mousemove', onMove)
-      el.addEventListener('mouseleave', onLeave)
-      el.addEventListener('click', onClick)
-      eventList.push(['mouseenter', onEnter], ['mousemove', onMove], ['mouseleave', onLeave], ['click', onClick])
-      handlers.push({ el, events: eventList })
-    })
-
-    // Apply selection state
-    cells.forEach(d => {
-      d.classList.toggle('day-selected', d.dataset.date === activeDate.value)
-    })
+    container.addEventListener('mouseenter', onEnter, true)
+    container.addEventListener('mousemove', onMove, true)
+    container.addEventListener('mouseleave', onLeave, true)
+    container.addEventListener('click', onClick)
 
     return () => {
-      handlers.forEach(({ el, events }) => {
-        events.forEach(([type, handler]) => el.removeEventListener(type, handler))
-      })
+      container.removeEventListener('mouseenter', onEnter, true)
+      container.removeEventListener('mousemove', onMove, true)
+      container.removeEventListener('mouseleave', onLeave, true)
+      container.removeEventListener('click', onClick)
     }
+  }, [])
+
+  // Apply selection state separately — no handler teardown needed
+  useEffect(() => {
+    const container = scrollRef.current
+    if (!container) return
+    container.querySelectorAll<HTMLElement>('.day').forEach(d => {
+      d.classList.toggle('day-selected', d.dataset.date === activeDate.value)
+    })
   }, [heatmapSvg.value, activeDate.value])
 
   const now = new Date().toLocaleString('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })
