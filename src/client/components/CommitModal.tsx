@@ -24,58 +24,106 @@ function colorizeSummary(line: string): string {
     .replace(/(\d+ deletions?\(-\))/, '<span class="stat-del">$1</span>')
 }
 
-function ModalBody({ data }: { data: CommitDetailData }) {
+function RenameForm({ data }: { data: CommitDetailData }) {
   const [renaming, setRenaming] = useState(false)
-  const [renameError, setRenameError] = useState('')
-  const [renameSaving, setRenameSaving] = useState(false)
-  const [editingDate, setEditingDate] = useState(false)
-  const [dateError, setDateError] = useState('')
-  const [dateSaving, setDateSaving] = useState(false)
-  const renameRef = useRef<HTMLTextAreaElement>(null)
-  const dateRef = useRef<HTMLInputElement>(null)
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const ref = useRef<HTMLTextAreaElement>(null)
 
   const fullMessage = data.body ? data.subject + '\n\n' + data.body : data.subject
+
+  useEffect(() => {
+    if (renaming && ref.current) {
+      ref.current.style.height = 'auto'
+      ref.current.style.height = ref.current.scrollHeight + 'px'
+      ref.current.focus()
+      ref.current.setSelectionRange(ref.current.value.length, ref.current.value.length)
+    }
+  }, [renaming])
+
+  const handleSave = async () => {
+    const msg = ref.current?.value.trim()
+    if (!msg) return
+    setSaving(true)
+    setError('')
+    try {
+      await renameCommit(data.fullHash, msg)
+    } catch (err) {
+      setError((err as Error).message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div class="modal-subject-row">
+        {!renaming && <div class="modal-subject">{data.subject}</div>}
+        {data.editable && !renaming && (
+          <button class="rename-btn" title="Rename commit message" onClick={() => setRenaming(true)}>
+            <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
+          </button>
+        )}
+      </div>
+
+      {renaming && (
+        <div class="rename-form">
+          <textarea class="rename-input" ref={ref} rows={3}>{fullMessage}</textarea>
+          <div class="rename-actions">
+            <button class="rename-cancel" onClick={() => { setRenaming(false); setError('') }}>Cancel</button>
+            <button class="rename-save" disabled={saving} onClick={handleSave}>
+              {saving ? 'Renaming...' : 'Rename'}
+            </button>
+          </div>
+          {error && <div class="rename-error">{error}</div>}
+        </div>
+      )}
+
+      {data.body && !renaming && (
+        <div class="modal-body" dangerouslySetInnerHTML={{ __html: esc(data.body).replace(/\n/g, '<br>') }} />
+      )}
+    </>
+  )
+}
+
+function DateEditForm({ fullHash, date, onClose }: { fullHash: string; date: string; onClose: () => void }) {
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const ref = useRef<HTMLInputElement>(null)
+
+  const handleSave = async () => {
+    const newDate = ref.current?.value
+    if (!newDate) return
+    setSaving(true)
+    setError('')
+    try {
+      await updateCommitDate(fullHash, toLocalISOString(new Date(newDate)))
+    } catch (err) {
+      setError((err as Error).message)
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div class="date-edit-form">
+      <div class="date-edit-row">
+        <input type="datetime-local" class="date-edit-input" ref={ref} step="1" value={toLocalDateTimeValue(date)} />
+        <button class="rename-cancel" onClick={() => { onClose(); setError('') }}>Cancel</button>
+        <button class="rename-save" disabled={saving} onClick={handleSave}>
+          {saving ? 'Saving...' : 'Save Date'}
+        </button>
+      </div>
+      {error && <div class="rename-error">{error}</div>}
+    </div>
+  )
+}
+
+function ModalBody({ data }: { data: CommitDetailData }) {
+  const [editingDate, setEditingDate] = useState(false)
   const showCommitterRow = data.committer !== data.author || data.committerDate !== data.authorDate
 
   const statsLines = data.stats.split('\n')
   const summary = statsLines[statsLines.length - 1] || ''
   const files = statsLines.slice(0, -1)
-
-  useEffect(() => {
-    if (renaming && renameRef.current) {
-      renameRef.current.style.height = 'auto'
-      renameRef.current.style.height = renameRef.current.scrollHeight + 'px'
-      renameRef.current.focus()
-      renameRef.current.setSelectionRange(renameRef.current.value.length, renameRef.current.value.length)
-    }
-  }, [renaming])
-
-  const handleRename = async () => {
-    const msg = renameRef.current?.value.trim()
-    if (!msg) return
-    setRenameSaving(true)
-    setRenameError('')
-    try {
-      await renameCommit(data.fullHash, msg)
-    } catch (err) {
-      setRenameError((err as Error).message)
-      setRenameSaving(false)
-    }
-  }
-
-  const handleDateSave = async () => {
-    const newDate = dateRef.current?.value
-    if (!newDate) return
-    setDateSaving(true)
-    setDateError('')
-    try {
-      const isoDate = toLocalISOString(new Date(newDate))
-      await updateCommitDate(data.fullHash, isoDate)
-    } catch (err) {
-      setDateError((err as Error).message)
-      setDateSaving(false)
-    }
-  }
 
   return (
     <>
@@ -90,34 +138,7 @@ function ModalBody({ data }: { data: CommitDetailData }) {
         </div>
       )}
 
-      {/* Subject */}
-      <div class="modal-subject-row">
-        {!renaming && <div class="modal-subject">{data.subject}</div>}
-        {data.editable && !renaming && (
-          <button class="rename-btn" title="Rename commit message" onClick={() => setRenaming(true)}>
-            <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
-          </button>
-        )}
-      </div>
-
-      {/* Rename form */}
-      {renaming && (
-        <div class="rename-form">
-          <textarea class="rename-input" ref={renameRef} rows={3}>{fullMessage}</textarea>
-          <div class="rename-actions">
-            <button class="rename-cancel" onClick={() => { setRenaming(false); setRenameError('') }}>Cancel</button>
-            <button class="rename-save" disabled={renameSaving} onClick={handleRename}>
-              {renameSaving ? 'Renaming...' : 'Rename'}
-            </button>
-          </div>
-          {renameError && <div class="rename-error">{renameError}</div>}
-        </div>
-      )}
-
-      {/* Body */}
-      {data.body && !renaming && (
-        <div class="modal-body" dangerouslySetInnerHTML={{ __html: esc(data.body).replace(/\n/g, '<br>') }} />
-      )}
+      <RenameForm data={data} />
 
       {/* Meta */}
       <div class="modal-meta">
@@ -132,16 +153,7 @@ function ModalBody({ data }: { data: CommitDetailData }) {
         </div>
 
         {!showCommitterRow && editingDate && (
-          <div class="date-edit-form">
-            <div class="date-edit-row">
-              <input type="datetime-local" class="date-edit-input" ref={dateRef} step="1" value={toLocalDateTimeValue(data.authorDate)} />
-              <button class="rename-cancel" onClick={() => { setEditingDate(false); setDateError('') }}>Cancel</button>
-              <button class="rename-save" disabled={dateSaving} onClick={handleDateSave}>
-                {dateSaving ? 'Saving...' : 'Save Date'}
-              </button>
-            </div>
-            {dateError && <div class="rename-error">{dateError}</div>}
-          </div>
+          <DateEditForm fullHash={data.fullHash} date={data.authorDate} onClose={() => setEditingDate(false)} />
         )}
 
         {showCommitterRow && (
@@ -156,16 +168,7 @@ function ModalBody({ data }: { data: CommitDetailData }) {
               )}
             </div>
             {editingDate && (
-              <div class="date-edit-form">
-                <div class="date-edit-row">
-                  <input type="datetime-local" class="date-edit-input" ref={dateRef} step="1" value={toLocalDateTimeValue(data.authorDate)} />
-                  <button class="rename-cancel" onClick={() => { setEditingDate(false); setDateError('') }}>Cancel</button>
-                  <button class="rename-save" disabled={dateSaving} onClick={handleDateSave}>
-                    {dateSaving ? 'Saving...' : 'Save Date'}
-                  </button>
-                </div>
-                {dateError && <div class="rename-error">{dateError}</div>}
-              </div>
+              <DateEditForm fullHash={data.fullHash} date={data.authorDate} onClose={() => setEditingDate(false)} />
             )}
           </>
         )}
