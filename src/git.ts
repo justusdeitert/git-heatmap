@@ -170,7 +170,7 @@ export function getCommitsByDate(date: string): CommitEntry[] {
     .filter(c => c.date.startsWith(date))
 }
 
-export function isHeadCommit(hash: string): boolean {
+function isHeadCommit(hash: string): boolean {
   const head = git('git rev-parse HEAD')
   const resolved = git(`git rev-parse ${hash}`)
   return head === resolved
@@ -196,7 +196,7 @@ export function getUncommittedFiles(): UncommittedFile[] {
   })
 }
 
-export function isCommitOnRemote(hash: string): boolean {
+function isCommitOnRemote(hash: string): boolean {
   try {
     const branches = execSync(`git branch -r --contains ${hash}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim()
     return branches.length > 0
