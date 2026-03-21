@@ -92,6 +92,11 @@ function buildDashboard(): string {
 
 const sseClients = new Set<ServerResponse>()
 
+const REFS_DEBOUNCE_MS = 300
+const DIRTY_DEBOUNCE_MS = 200
+const WATCH_PAUSE_MS = 500
+const PER_PAGE = 20
+
 let watchPaused = false
 
 function notifyClients(): void {
@@ -110,7 +115,7 @@ function watchGitDir(): void {
     try {
       watch(dir, { recursive: dir.endsWith('refs') }, () => {
         if (debounce) clearTimeout(debounce)
-        debounce = setTimeout(notifyClients, 300)
+        debounce = setTimeout(notifyClients, REFS_DEBOUNCE_MS)
       })
     } catch { /* dir may not exist yet */ }
   }
@@ -133,7 +138,7 @@ function watchGitDir(): void {
           lastDirtyFiles = dirtyFiles
           notifyClients()
         }
-      }, 200)
+      }, DIRTY_DEBOUNCE_MS)
     })
   } catch { /* recursive watch not supported */ }
 }
@@ -203,7 +208,7 @@ function handleCommitDetail(res: ServerResponse, hash: string): void {
     }
     watchPaused = true
     const editableStatus = getCommitEditableStatus(hash)
-    setTimeout(() => { watchPaused = false }, 500)
+    setTimeout(() => { watchPaused = false }, WATCH_PAUSE_MS)
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
     res.end(JSON.stringify({ ...detail, ...editableStatus }))
   } catch (err) {
@@ -254,21 +259,19 @@ function handleCommits(res: ServerResponse, searchParams: URLSearchParams): void
   try {
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1)
     const date = searchParams.get('date')
-    const perPage = 20
-
     let total: number
     let commits: ReturnType<typeof getRecentCommits>
     if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
       const all = getCommitsByDate(date)
       total = all.length
-      commits = all.slice((page - 1) * perPage, page * perPage)
+      commits = all.slice((page - 1) * PER_PAGE, page * PER_PAGE)
     } else {
       total = getCommitCount()
-      commits = getRecentCommits(perPage, (page - 1) * perPage)
+      commits = getRecentCommits(PER_PAGE, (page - 1) * PER_PAGE)
     }
 
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-    res.end(JSON.stringify({ commits, total, page, perPage, totalPages: Math.ceil(total / perPage) }))
+    res.end(JSON.stringify({ commits, total, page, perPage: PER_PAGE, totalPages: Math.ceil(total / PER_PAGE) }))
   } catch (err) {
     res.writeHead(500, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ error: (err as Error).message }))
