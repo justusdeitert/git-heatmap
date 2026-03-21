@@ -2,9 +2,12 @@
 
 Interactive commit heatmap dashboard for any git repository.
 
-[![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen?style=flat-square)](#)
-[![dark mode](https://img.shields.io/badge/dark%20mode-supported-333?style=flat-square)](README.md)
-[![light mode](https://img.shields.io/badge/light%20mode-supported-eee?style=flat-square&labelColor=666)](README.md)
+[![npm version](https://img.shields.io/npm/v/git-heatmap?style=flat-square)](https://www.npmjs.com/package/git-heatmap)
+[![license](https://img.shields.io/npm/l/git-heatmap?style=flat-square)](https://github.com/justusdeitert/git-heatmap/blob/main/LICENSE)
+[![node](https://img.shields.io/node/v/git-heatmap?style=flat-square)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square)](https://github.com/justusdeitert/git-heatmap/blob/main/tsconfig.json)
+[![dependencies](https://img.shields.io/badge/dependencies-2-brightgreen?style=flat-square)](#)
+[![dark/light mode](https://img.shields.io/badge/theme-dark%20%2F%20light-858585?style=flat-square)](#)
 
 ## Features
 
@@ -14,7 +17,7 @@ Interactive commit heatmap dashboard for any git repository.
 - Interactive tooltips on hover
 - Live local server — refreshes on page reload
 - Auto-opens browser, stops on Ctrl+C
-- Zero runtime dependencies (uses `node:http`)
+- Minimal dependencies (Preact + signals, uses `node:http`)
 
 ## Install
 
