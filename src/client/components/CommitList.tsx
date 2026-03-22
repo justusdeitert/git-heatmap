@@ -1,4 +1,5 @@
 import { CopyHash } from '@/client/components/CopyHash';
+import CLOCK_ALERT_ICON from '@/client/icons/clock-alert.svg';
 import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitEntry, RefDecoration } from '@/client/state';
@@ -38,7 +39,7 @@ function RefBadges({ refs }: { refs: RefDecoration[] }) {
   );
 }
 
-function CommitRow({ commit }: { commit: CommitEntry }) {
+function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: boolean }) {
   const dateMismatch = commit.date !== commit.committerDate ||
     commit.author !== commit.committer ||
     commit.authorEmail !== commit.committerEmail;
@@ -79,6 +80,15 @@ function CommitRow({ commit }: { commit: CommitEntry }) {
       </span>
       <span class="commit-meta" onClick={openDetail}>
         {commit.author} &middot; {fullDateTime(commit.date)}
+        {outOfOrder && (
+          <span
+            class="commit-time-warn"
+            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp out of order \u2014 this commit\'s date doesn\'t match its position')}
+            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp out of order \u2014 this commit\'s date doesn\'t match its position')}
+            onMouseLeave={hideTooltip}
+            dangerouslySetInnerHTML={{ __html: CLOCK_ALERT_ICON }}
+          />
+        )}
         {dateMismatch && (
           <span
             class="commit-warn"
@@ -188,7 +198,12 @@ export function CommitList() {
         {commits.value.length === 0 ? (
           <div class="commit-empty">No commits found</div>
         ) : (
-          commits.value.map((c) => <CommitRow key={c.fullHash} commit={c} />)
+          commits.value.map((c, i) => {
+            const prev = commits.value[i - 1];
+            const ts = new Date(c.date).getTime();
+            const outOfOrder = prev && ts > new Date(prev.date).getTime();
+            return <CommitRow key={c.fullHash} commit={c} outOfOrder={outOfOrder} />;
+          })
         )}
       </div>
       <Pagination />

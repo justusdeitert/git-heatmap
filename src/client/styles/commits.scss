@@ -163,6 +163,18 @@
 .commit-warn { color: #d29922; }
 .commit-local { color: var(--text-muted); }
 
+.commit-time-warn {
+  display: inline-flex;
+  width: 13px;
+  height: 13px;
+  margin-left: 6px;
+  color: #f47067;
+  cursor: help;
+  vertical-align: middle;
+
+  svg { width: 100%; height: 100%; }
+}
+
 .pagination {
   display: flex;
   align-items: center;
