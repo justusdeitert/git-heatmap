@@ -110,6 +110,12 @@ export const selectedHashes = signal<Set<string>>(new Set());
 export const bulkShiftLoading = signal(false);
 export const bulkShiftError = signal<string | null>(null);
 
+// Rebase recovery
+export const rebaseInProgress = signal(false);
+export const rebaseHasBackup = signal(false);
+export const rebaseLoading = signal(false);
+export const rebaseError = signal<string | null>(null);
+
 // Tooltip
 export const tooltipText = signal('');
 export const tooltipVisible = signal(false);
@@ -299,6 +305,83 @@ export async function clearTraces(): Promise<void> {
   confirmVisible.value = false;
 }
 
+// --- Rebase recovery ---
+
+export async function checkRebaseStatus(): Promise<void> {
+  try {
+    const res = await fetch('/api/rebase');
+    if (!res.ok) return;
+    const data: { inProgress: boolean; hasBackup: boolean } = await res.json();
+    rebaseInProgress.value = data.inProgress;
+    rebaseHasBackup.value = data.hasBackup;
+  } catch { /* ignore */ }
+}
+
+export async function rebaseAbort(): Promise<void> {
+  rebaseLoading.value = true;
+  rebaseError.value = null;
+  try {
+    const res = await fetch('/api/rebase/abort', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to abort rebase');
+    }
+    rebaseInProgress.value = false;
+    rebaseHasBackup.value = false;
+    await refreshAll();
+  } catch (err) {
+    rebaseError.value = err instanceof Error ? err.message : 'Failed to abort rebase';
+  } finally {
+    rebaseLoading.value = false;
+  }
+}
+
+export async function rebaseRestore(): Promise<void> {
+  rebaseLoading.value = true;
+  rebaseError.value = null;
+  try {
+    const res = await fetch('/api/rebase/restore', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to restore');
+    }
+    rebaseInProgress.value = false;
+    rebaseHasBackup.value = false;
+    await refreshAll();
+  } catch (err) {
+    rebaseError.value = err instanceof Error ? err.message : 'Failed to restore';
+  } finally {
+    rebaseLoading.value = false;
+  }
+}
+
+export async function rebaseDismissBackup(): Promise<void> {
+  rebaseLoading.value = true;
+  rebaseError.value = null;
+  try {
+    const res = await fetch('/api/rebase/dismiss', { method: 'POST' });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to dismiss backup');
+    }
+    rebaseHasBackup.value = false;
+    await checkRebaseStatus();
+  } catch (err) {
+    rebaseError.value = err instanceof Error ? err.message : 'Failed to dismiss backup';
+  } finally {
+    rebaseLoading.value = false;
+  }
+}
+
+async function refreshAll(): Promise<void> {
+  await Promise.all([
+    fetchCommits(currentPage.value),
+    fetchCalendar(activeYear.value ?? new Date().getFullYear()),
+    fetchStats(),
+    checkRebaseStatus(),
+  ]);
+}
+
 // --- Bulk selection ---
 
 export function toggleSelectionMode(): void {
@@ -367,6 +450,7 @@ export function initSSE(): void {
       fetchCommits(currentPage.value),
       fetchCalendar(activeYear.value ?? new Date().getFullYear()),
       fetchStats(),
+      checkRebaseStatus(),
     ]);
   });
   events.addEventListener('error', () => {
@@ -388,4 +472,5 @@ export function initFromServerData(data: InitialData): void {
   activeYear.value =
     data.availableYears.length > 0 ? data.availableYears[data.availableYears.length - 1] : new Date().getFullYear();
   fetchCommits(1);
+  checkRebaseStatus();
 }

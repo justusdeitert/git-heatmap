@@ -7,10 +7,13 @@ import { join } from 'node:path';
 import { parseArgs } from '@/args';
 import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear, getMonthLabels } from '@/calendar';
 import {
+  abortRebase,
   bulkShiftCommits,
   clearReflog,
+  dismissBackup,
   getAuthorCount,
   getAuthorStats,
+  getBackupRef,
   getCommitCount,
   getCommitDates,
   getCommitDetail,
@@ -25,6 +28,8 @@ import {
   getRepoName,
   getUncommittedFiles,
   isInsideRepo,
+  isRebaseInProgress,
+  restoreFromBackup,
   rewriteCommit,
   rewriteCommitMessage,
 } from '@/git';
@@ -448,6 +453,51 @@ function handleAuthors(res: ServerResponse): void {
   }
 }
 
+function handleRebaseStatus(res: ServerResponse): void {
+  try {
+    const inProgress = isRebaseInProgress();
+    const hasBackup = getBackupRef() !== null;
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ inProgress, hasBackup }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
+function handleRebaseAbort(res: ServerResponse): void {
+  try {
+    abortRebase();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
+function handleRebaseRestore(res: ServerResponse): void {
+  try {
+    restoreFromBackup();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
+function handleRebaseDismiss(res: ServerResponse): void {
+  try {
+    dismissBackup();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
 // --- HTTP router ---
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -464,6 +514,10 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (parsed.pathname === '/api/commits/bulk-shift' && req.method === 'PUT') return handleBulkShift(req, res);
   if (parsed.pathname === '/api/commits') return handleCommits(res, parsed.searchParams);
   if (parsed.pathname === '/api/authors') return handleAuthors(res);
+  if (parsed.pathname === '/api/rebase' && req.method === 'GET') return handleRebaseStatus(res);
+  if (parsed.pathname === '/api/rebase/abort' && req.method === 'POST') return handleRebaseAbort(res);
+  if (parsed.pathname === '/api/rebase/restore' && req.method === 'POST') return handleRebaseRestore(res);
+  if (parsed.pathname === '/api/rebase/dismiss' && req.method === 'POST') return handleRebaseDismiss(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'DELETE') return handleReflogDelete(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'GET') return handleReflogGet(res);
 

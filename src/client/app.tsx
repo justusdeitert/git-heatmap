@@ -19,6 +19,7 @@ import { DirtyBanner } from '@/client/components/DirtyBanner';
 import { ErrorBanner } from '@/client/components/ErrorBanner';
 import { Footer, Header } from '@/client/components/Header';
 import { Heatmap } from '@/client/components/Heatmap';
+import { RebaseBanner } from '@/client/components/RebaseBanner';
 import { ConfirmDialog, ReflogPanel } from '@/client/components/ReflogPanel';
 import { StatsCards } from '@/client/components/StatsCards';
 import { Tooltip } from '@/client/components/Tooltip';
@@ -42,6 +43,7 @@ function App() {
     <>
       <div class="container">
         <Header />
+        <RebaseBanner />
         <ErrorBanner />
         <DirtyBanner />
         <StatsCards />

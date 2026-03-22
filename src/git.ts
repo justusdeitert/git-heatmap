@@ -1,5 +1,5 @@
 import { exec, execSync } from 'node:child_process';
-import { unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { CommitEntry, RefDecoration } from '@/types';
@@ -77,6 +77,52 @@ export function getAuthorStats(): AuthorStat[] {
 
 export function getCurrentBranch(): string {
   return git('git branch --show-current');
+}
+
+const BACKUP_REF = 'refs/git-heatmap/pre-rebase-backup';
+
+export function isRebaseInProgress(): boolean {
+  const gitDir = getGitDir();
+  return existsSync(join(gitDir, 'rebase-merge')) || existsSync(join(gitDir, 'rebase-apply'));
+}
+
+export function getBackupRef(): string | null {
+  try {
+    return execSync(`git rev-parse --verify ${BACKUP_REF}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+export function abortRebase(): void {
+  if (!isRebaseInProgress()) throw new Error('No rebase in progress');
+  execSync('git rebase --abort', { stdio: 'pipe' });
+  // Abort restores pre-rebase state, so backup ref is no longer needed
+  deleteBackupRef();
+}
+
+export function restoreFromBackup(): void {
+  const ref = getBackupRef();
+  if (!ref) throw new Error('No backup ref found');
+  // Abort rebase first if one is active
+  if (isRebaseInProgress()) {
+    execSync('git rebase --abort', { stdio: 'pipe' });
+  }
+  execSync(`git reset --hard ${ref}`, { stdio: 'pipe' });
+  execSync(`git update-ref -d ${BACKUP_REF}`, { stdio: 'pipe' });
+}
+
+function createBackupRef(): void {
+  execSync(`git update-ref ${BACKUP_REF} HEAD`, { stdio: 'pipe' });
+}
+
+function deleteBackupRef(): void {
+  try { execSync(`git update-ref -d ${BACKUP_REF}`, { stdio: 'pipe' }); } catch { /* ignore */ }
+}
+
+export function dismissBackup(): void {
+  if (!getBackupRef()) throw new Error('No backup ref found');
+  deleteBackupRef();
 }
 
 export interface CommitDetail {
@@ -276,6 +322,7 @@ export function getCommitEditableStatus(hash: string): { editable: boolean; reas
 }
 
 export function rewriteCommitMessage(hash: string, newMessage: string): void {
+  if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   const msgFile = join(tmpdir(), `git-heatmap-msg-${Date.now()}.txt`);
   writeFileSync(msgFile, newMessage);
   try {
@@ -291,6 +338,7 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
     }
 
     const resolved = git(`git rev-parse ${hash}`);
+    createBackupRef();
     // Automate interactive rebase: change 'pick <hash>' to 'reword <hash>'
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/reword ${resolved.slice(0, 7)}/'`;
     const msgEditor = `cp ${JSON.stringify(msgFile)}`;
@@ -299,9 +347,11 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
         `GIT_SEQUENCE_EDITOR="${seqEditor}" GIT_EDITOR="${msgEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`,
         { encoding: 'utf8', stdio: 'pipe' },
       );
+      deleteBackupRef();
     } catch (err) {
       try {
         execSync('git rebase --abort', { stdio: 'pipe' });
+        deleteBackupRef();
       } catch {
         /* ignore */
       }
@@ -326,6 +376,7 @@ export function rewriteCommit(
     committerEmail?: string;
   },
 ): void {
+  if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   const effectiveCommitterDate = opts.committerDate ?? opts.authorDate;
 
   if (isHeadCommit(hash)) {
@@ -344,6 +395,7 @@ export function rewriteCommit(
   }
 
   const resolved = git(`git rev-parse ${hash}`);
+  createBackupRef();
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
     execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${resolved}~1`, {
@@ -363,9 +415,11 @@ export function rewriteCommit(
 
     execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
     execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
+    deleteBackupRef();
   } catch (err) {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
+      deleteBackupRef();
     } catch {
       /* ignore */
     }
@@ -412,6 +466,7 @@ export async function clearReflog(): Promise<void> {
 
 export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   if (hashes.length === 0) return;
+  if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   if (hasUncommittedChanges()) {
     throw new Error('You have uncommitted changes. Please commit or stash them first.');
   }
@@ -440,6 +495,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
 
   const oldest = sorted[sorted.length - 1];
   const headHash = allHashes[0];
+  const isRootCommit = oldest === allHashes[allHashes.length - 1];
 
   // If all selected commits include HEAD, or it's a single HEAD commit
   if (sorted.length === 1 && sorted[0] === headHash) {
@@ -451,56 +507,48 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     return;
   }
 
-  // Build sed script to mark selected commits as 'edit'
-  const sedParts = sorted.map((h) => `s/^pick ${h.slice(0, 7)}/edit ${h.slice(0, 7)}/`).join(';');
-  const seqEditor = `sed -i.bak '${sedParts}'`;
+  // Build exec commands keyed by short hash — each amends dates inline during rebase
+  const execMap: Record<string, string> = {};
+  for (const hash of sorted) {
+    const dates = dateMap.get(hash)!;
+    execMap[hash.slice(0, 7)] =
+      `exec GIT_COMMITTER_DATE='${dates.committerDate}' git commit --amend --no-edit --date='${dates.authorDate}'`;
+  }
 
+  // Write a temp Node script as GIT_SEQUENCE_EDITOR that inserts exec lines
+  // after each target pick — the rebase runs to completion in one pass
+  const editorScript = [
+    'const fs = require("fs");',
+    'const todoFile = process.argv[2];',
+    'const lines = fs.readFileSync(todoFile, "utf8").split("\\n");',
+    `const execMap = ${JSON.stringify(execMap)};`,
+    'const result = [];',
+    'for (const line of lines) {',
+    '  result.push(line);',
+    '  const m = line.match(/^pick ([a-f0-9]+)/);',
+    '  if (m && execMap[m[1]]) result.push(execMap[m[1]]);',
+    '}',
+    'fs.writeFileSync(todoFile, result.join("\\n"));',
+  ].join('\n');
+
+  const scriptPath = join(tmpdir(), `git-heatmap-seqed-${Date.now()}.js`);
+  writeFileSync(scriptPath, editorScript);
+
+  createBackupRef();
   try {
-    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${oldest}~1`, {
+    execSync(`git rebase -i ${isRootCommit ? '--root' : `${oldest}~1`}`, {
       encoding: 'utf8',
       stdio: 'pipe',
+      env: { ...(process.env as Record<string, string>), GIT_SEQUENCE_EDITOR: `"${process.execPath}" "${scriptPath}"` },
     });
-
-    // Now git has stopped at the first 'edit' commit. Loop through all of them.
-    let edited = 0;
-    const maxIterations = sorted.length * 2;
-    let iterations = 0;
-    while (iterations < maxIterations) {
-      iterations++;
-      const currentHash = git('git rev-parse HEAD');
-      const dates = dateMap.get(currentHash);
-      if (dates) {
-        execSync(
-          `git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`,
-          { encoding: 'utf8', stdio: 'pipe', env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate } },
-        );
-        edited++;
-      }
-
-      // Continue rebase — if it finishes, we're done
-      try {
-        execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
-        // Rebase completed without stopping again
-        break;
-      } catch {
-        // Rebase stopped at next 'edit' commit — check if still in progress
-        try {
-          const rebaseDir = join(git('git rev-parse --git-dir'), 'rebase-merge');
-          execSync(`test -d ${JSON.stringify(rebaseDir)}`, { stdio: 'pipe' });
-          // Still rebasing, continue loop
-        } catch {
-          break;
-        }
-      }
-    }
-
-    if (edited < sorted.length) {
-      throw new Error(`Expected to shift ${sorted.length} commits but only edited ${edited}`);
-    }
+    deleteBackupRef();
   } catch (err) {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
+      deleteBackupRef();
     } catch { /* ignore */ }
     throw err;
+  } finally {
+    try { unlinkSync(scriptPath); } catch { /* ignore */ }
   }
 }
