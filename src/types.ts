@@ -30,7 +30,10 @@ export interface CommitEntry {
   fullHash: string;
   message: string;
   author: string;
+  authorEmail: string;
   date: string;
+  committer: string;
+  committerEmail: string;
   committerDate: string;
   onRemote: boolean;
 }

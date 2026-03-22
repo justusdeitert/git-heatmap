@@ -18,8 +18,10 @@ export interface CommitDetailData {
   subject: string;
   body: string;
   author: string;
+  authorEmail: string;
   authorDate: string;
   committer: string;
+  committerEmail: string;
   committerDate: string;
   stats: string;
   editable: boolean;
@@ -208,13 +210,26 @@ export async function renameCommit(hash: string, message: string): Promise<void>
   }
 }
 
-export async function updateCommitDate(hash: string, date: string): Promise<void> {
+export async function updateCommit(
+  hash: string,
+  opts: {
+    authorDate: string;
+    committerDate?: string;
+    author?: string;
+    committer?: string;
+  },
+): Promise<void> {
   reloadSuppressed.value = true;
   try {
+    const payload: Record<string, string> = opts.committerDate
+      ? { authorDate: opts.authorDate, committerDate: opts.committerDate }
+      : { date: opts.authorDate };
+    if (opts.author) payload.author = opts.author;
+    if (opts.committer) payload.committer = opts.committer;
     const res = await fetch(`/api/commit/${encodeURIComponent(hash)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const data = await res.json();

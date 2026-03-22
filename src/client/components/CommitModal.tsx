@@ -2,8 +2,22 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
 import EDIT_SVG from '@/client/icons/edit.svg';
 import type { CommitDetailData } from '@/client/state';
-import { closeModal, modalData, modalLoading, modalVisible, renameCommit, updateCommitDate } from '@/client/state';
+import { closeModal, modalData, modalLoading, modalVisible, renameCommit, tooltipText, tooltipVisible, tooltipX, tooltipY, updateCommit } from '@/client/state';
 import { esc, formatFullDate, relTime, toLocalDateTimeValue, toLocalISOString } from '@/client/utils';
+
+function showBtnTooltip(e: MouseEvent, text: string) {
+  tooltipText.value = text;
+  tooltipVisible.value = true;
+  const el = document.getElementById('tooltip');
+  if (el) {
+    tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12);
+    tooltipY.value = e.clientY - 36;
+  }
+}
+
+function hideBtnTooltip() {
+  tooltipVisible.value = false;
+}
 
 function colorizeStatLine(line: string): string {
   const escaped = esc(line);
@@ -67,7 +81,13 @@ function RenameForm({ data }: { data: CommitDetailData }) {
       <div class="modal-subject-row">
         {!renaming && <div class="modal-subject">{data.subject}</div>}
         {data.editable && !renaming && (
-          <button class="rename-btn" title="Rename commit message" onClick={() => setRenaming(true)}>
+          <button
+            class="modal-edit-btn"
+            onClick={() => { hideBtnTooltip(); setRenaming(true); }}
+            onMouseEnter={(e: MouseEvent) => showBtnTooltip(e, 'Rename commit message')}
+            onMouseMove={(e: MouseEvent) => showBtnTooltip(e, 'Rename commit message')}
+            onMouseLeave={hideBtnTooltip}
+          >
             <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
           </button>
         )}
@@ -103,18 +123,41 @@ function RenameForm({ data }: { data: CommitDetailData }) {
   );
 }
 
-function DateEditForm({ fullHash, date, onClose }: { fullHash: string; date: string; onClose: () => void }) {
+function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: () => void }) {
+  const alreadyDiffers =
+    data.author !== data.committer ||
+    data.authorEmail !== data.committerEmail ||
+    data.authorDate !== data.committerDate;
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
+  const [linked, setLinked] = useState(!alreadyDiffers);
+  const authorIdentityRef = useRef<HTMLInputElement>(null);
+  const committerIdentityRef = useRef<HTMLInputElement>(null);
+  const authorDateRef = useRef<HTMLInputElement>(null);
+  const committerDateRef = useRef<HTMLInputElement>(null);
 
   const handleSave = async () => {
-    const newDate = ref.current?.value;
-    if (!newDate) return;
+    const newAuthorDate = authorDateRef.current?.value;
+    const newAuthor = authorIdentityRef.current?.value.trim();
+    if (!newAuthorDate || !newAuthor) return;
     setSaving(true);
     setError('');
     try {
-      await updateCommitDate(fullHash, toLocalISOString(new Date(newDate)));
+      const opts: { authorDate: string; committerDate?: string; author?: string; committer?: string } = {
+        authorDate: toLocalISOString(new Date(newAuthorDate)),
+        author: newAuthor,
+      };
+      if (!linked) {
+        const newCommitterDate = committerDateRef.current?.value;
+        const newCommitter = committerIdentityRef.current?.value.trim();
+        if (!newCommitterDate || !newCommitter) return;
+        opts.committerDate = toLocalISOString(new Date(newCommitterDate));
+        opts.committer = newCommitter;
+      } else {
+        // Linked mode: committer should match author
+        opts.committer = newAuthor;
+      }
+      await updateCommit(data.fullHash, opts);
     } catch (err) {
       setError((err as Error).message);
       setSaving(false);
@@ -123,8 +166,56 @@ function DateEditForm({ fullHash, date, onClose }: { fullHash: string; date: str
 
   return (
     <div class="date-edit-form">
+      <label class="date-link-toggle">
+        <input
+          type="checkbox"
+          checked={!linked}
+          onChange={(e) => setLinked(!(e.target as HTMLInputElement).checked)}
+        />
+        Edit author &amp; committer individually
+      </label>
+
+      {/* Author fields */}
+      <div class="edit-field-group">
+        {!linked && <span class="date-edit-label">Author</span>}
+        <input
+          type="text"
+          class="date-edit-input author-edit-input"
+          ref={authorIdentityRef}
+          value={`${data.author} <${data.authorEmail}>`}
+          placeholder="Name <email>"
+        />
+        <input
+          type="datetime-local"
+          class="date-edit-input"
+          ref={authorDateRef}
+          step="1"
+          value={toLocalDateTimeValue(data.authorDate)}
+        />
+      </div>
+
+      {/* Committer fields (when unlinked) */}
+      {!linked && (
+        <div class="edit-field-group">
+          <span class="date-edit-label">Committer</span>
+          <input
+            type="text"
+            class="date-edit-input author-edit-input"
+            ref={committerIdentityRef}
+            value={`${data.committer} <${data.committerEmail}>`}
+            placeholder="Name <email>"
+          />
+          <input
+            type="datetime-local"
+            class="date-edit-input"
+            ref={committerDateRef}
+            step="1"
+            value={toLocalDateTimeValue(data.committerDate)}
+          />
+        </div>
+      )}
+
       <div class="date-edit-row">
-        <input type="datetime-local" class="date-edit-input" ref={ref} step="1" value={toLocalDateTimeValue(date)} />
         <button
           class="rename-cancel"
           onClick={() => {
@@ -135,7 +226,7 @@ function DateEditForm({ fullHash, date, onClose }: { fullHash: string; date: str
           Cancel
         </button>
         <button class="rename-save" disabled={saving} onClick={handleSave}>
-          {saving ? 'Saving...' : 'Save Date'}
+          {saving ? 'Saving...' : 'Save'}
         </button>
       </div>
       {error && <div class="rename-error">{error}</div>}
@@ -145,7 +236,9 @@ function DateEditForm({ fullHash, date, onClose }: { fullHash: string; date: str
 
 function ModalBody({ data }: { data: CommitDetailData }) {
   const [editingDate, setEditingDate] = useState(false);
-  const showCommitterRow = data.committer !== data.author || data.committerDate !== data.authorDate;
+  const showCommitterRow = data.committer !== data.author ||
+    data.committerEmail !== data.authorEmail ||
+    data.committerDate !== data.authorDate;
 
   const statsLines = data.stats.split('\n');
   const summary = statsLines[statsLines.length - 1] || '';
@@ -159,10 +252,12 @@ function ModalBody({ data }: { data: CommitDetailData }) {
           {data.reason}
         </div>
       )}
-      {data.committerDate !== data.authorDate && (
+      {(data.committerDate !== data.authorDate ||
+        data.committer !== data.author ||
+        data.committerEmail !== data.authorEmail) && (
         <div class="modal-edit-notice">
-          <span class="dirty-icon">&#9888;</span>Author date and committer date differ. This commit may have been
-          amended or rebased.
+          <span class="dirty-icon">&#9888;</span>Author and committer differ. This commit may have been amended or
+          rebased.
         </div>
       )}
 
@@ -170,35 +265,37 @@ function ModalBody({ data }: { data: CommitDetailData }) {
 
       {/* Meta */}
       <div class="modal-meta">
-        <div class="modal-meta-row">
-          <span class="modal-meta-label">Author</span> {data.author},&ensp;{relTime(data.authorDate)}{' '}
-          <span class="modal-meta-date">({formatFullDate(data.authorDate)})</span>
-          {data.editable && !showCommitterRow && !editingDate && (
-            <button class="date-edit-btn" title="Change commit date" onClick={() => setEditingDate(true)}>
-              <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
-            </button>
-          )}
-        </div>
-
-        {!showCommitterRow && editingDate && (
-          <DateEditForm fullHash={data.fullHash} date={data.authorDate} onClose={() => setEditingDate(false)} />
-        )}
-
-        {showCommitterRow && (
+        {!editingDate && (
           <>
+            {data.editable && (
+              <button
+                class="modal-edit-btn"
+                onClick={() => { hideBtnTooltip(); setEditingDate(true); }}
+                onMouseEnter={(e: MouseEvent) => showBtnTooltip(e, 'Edit author & committer details')}
+                onMouseMove={(e: MouseEvent) => showBtnTooltip(e, 'Edit author & committer details')}
+                onMouseLeave={hideBtnTooltip}
+              >
+                <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
+              </button>
+            )}
             <div class="modal-meta-row">
-              <span class="modal-meta-label">Committer</span> {data.committer},&ensp;{relTime(data.committerDate)}{' '}
-              <span class="modal-meta-date">({formatFullDate(data.committerDate)})</span>
-              {data.editable && !editingDate && (
-                <button class="date-edit-btn" title="Change commit date" onClick={() => setEditingDate(true)}>
-                  <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
-                </button>
-              )}
+              <span class="modal-meta-label">Author</span> {data.author}{' '}
+              <span class="modal-meta-email">&lt;{data.authorEmail}&gt;</span>
+              <span class="modal-meta-time">{relTime(data.authorDate)}{' '}<span class="modal-meta-date">({formatFullDate(data.authorDate)})</span></span>
             </div>
-            {editingDate && (
-              <DateEditForm fullHash={data.fullHash} date={data.authorDate} onClose={() => setEditingDate(false)} />
+
+            {showCommitterRow && (
+              <div class="modal-meta-row">
+                <span class="modal-meta-label">Committer</span> {data.committer}{' '}
+                <span class="modal-meta-email">&lt;{data.committerEmail}&gt;</span>
+                <span class="modal-meta-time">{relTime(data.committerDate)}{' '}<span class="modal-meta-date">({formatFullDate(data.committerDate)})</span></span>
+              </div>
             )}
           </>
+        )}
+
+        {editingDate && (
+          <CommitEditForm data={data} onClose={() => setEditingDate(false)} />
         )}
       </div>
 

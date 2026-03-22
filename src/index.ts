@@ -23,7 +23,7 @@ import {
   getRepoName,
   getUncommittedFiles,
   isInsideRepo,
-  rewriteCommitDate,
+  rewriteCommit,
   rewriteCommitMessage,
 } from '@/git';
 import { buildHeatmapSvg, generateHTML } from '@/html';
@@ -199,18 +199,66 @@ async function handleCommitRename(req: IncomingMessage, res: ServerResponse, has
 
 async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse, hash: string): Promise<void> {
   try {
-    const { date } = await parseRequestBody<{ date: string }>(req);
-    if (typeof date !== 'string' || !date.trim()) {
+    const body = await parseRequestBody<{
+      date?: string;
+      authorDate?: string;
+      committerDate?: string;
+      author?: string;
+      committer?: string;
+    }>(req);
+    let authorDate: string;
+    let committerDate: string | undefined;
+
+    if (body.date) {
+      authorDate = body.date.trim();
+    } else if (body.authorDate) {
+      authorDate = body.authorDate.trim();
+      committerDate = body.committerDate?.trim();
+    } else {
       res.writeHead(400, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Date is required' }));
       return;
     }
-    if (Number.isNaN(new Date(date).getTime())) {
+
+    if (Number.isNaN(new Date(authorDate).getTime())) {
       res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid date format. Expected: YYYY-MM-DDTHH:mm:ss±HH:mm' }));
+      res.end(JSON.stringify({ error: 'Invalid author date format. Expected: YYYY-MM-DDTHH:mm:ss±HH:mm' }));
       return;
     }
-    rewriteCommitDate(hash, date.trim());
+    if (committerDate && Number.isNaN(new Date(committerDate).getTime())) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid committer date format. Expected: YYYY-MM-DDTHH:mm:ss±HH:mm' }));
+      return;
+    }
+
+    // Parse author/committer identity
+    const authorPattern = /^.+\s<.+>$/;
+    let authorStr: string | undefined;
+    let committerName: string | undefined;
+    let committerEmail: string | undefined;
+
+    if (body.author) {
+      if (!authorPattern.test(body.author.trim())) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid author format. Expected: Name <email>' }));
+        return;
+      }
+      authorStr = body.author.trim();
+    }
+    if (body.committer) {
+      if (!authorPattern.test(body.committer.trim())) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid committer format. Expected: Name <email>' }));
+        return;
+      }
+      const cMatch = body.committer.trim().match(/^(.+)\s<(.+)>$/);
+      if (cMatch) {
+        committerName = cMatch[1];
+        committerEmail = cMatch[2];
+      }
+    }
+
+    rewriteCommit(hash, { authorDate, committerDate, author: authorStr, committerName, committerEmail });
     const detail = getCommitDetail(hash);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(detail ?? { ok: true }));

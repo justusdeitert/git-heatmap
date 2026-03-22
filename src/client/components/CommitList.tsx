@@ -18,7 +18,9 @@ import {
 import { fullDateTime } from '@/client/utils';
 
 function CommitRow({ commit }: { commit: CommitEntry }) {
-  const dateMismatch = commit.date !== commit.committerDate;
+  const dateMismatch = commit.date !== commit.committerDate ||
+    commit.author !== commit.committer ||
+    commit.authorEmail !== commit.committerEmail;
   const openDetail = () => showCommitDetail(commit.fullHash);
 
   const showWarnTooltip = (e: MouseEvent, text: string) => {
@@ -45,8 +47,8 @@ function CommitRow({ commit }: { commit: CommitEntry }) {
         {dateMismatch && (
           <span
             class="commit-warn"
-            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Author date and committer date differ')}
-            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Author date and committer date differ')}
+            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Author and committer differ')}
+            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Author and committer differ')}
             onMouseLeave={hideTooltip}
           >
             &#9888;

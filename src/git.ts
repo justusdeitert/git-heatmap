@@ -71,8 +71,10 @@ export interface CommitDetail {
   subject: string;
   body: string;
   author: string;
+  authorEmail: string;
   authorDate: string;
   committer: string;
+  committerEmail: string;
   committerDate: string;
   stats: string;
 }
@@ -118,23 +120,23 @@ export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
   const unpushed = getUnpushedCommitSet();
   const sep = '---GD---';
   const raw = git(
-    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --skip=${skip} -${count}`,
+    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" --skip=${skip} -${count}`,
   );
   if (!raw) return [];
   return raw
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, date, committerDate] = line.split(sep);
+      const [hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate] = line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
-      return { hash, fullHash, message, author, date, committerDate, onRemote };
+      return { hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, onRemote };
     });
 }
 
 export function getCommitDetail(hash: string): CommitDetail | null {
   const sep = '---GD---';
   try {
-    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%aI${sep}%cn${sep}%cI" ${hash}`);
+    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" ${hash}`);
     if (!raw) return null;
     const parts = raw.split(sep);
     const stats = git(`git diff --stat ${hash}~1 ${hash} 2>/dev/null || git diff --stat --root ${hash}`);
@@ -144,9 +146,11 @@ export function getCommitDetail(hash: string): CommitDetail | null {
       subject: parts[2],
       body: parts[3].trim(),
       author: parts[4],
-      authorDate: parts[5],
-      committer: parts[6],
-      committerDate: parts[7],
+      authorEmail: parts[5],
+      authorDate: parts[6],
+      committer: parts[7],
+      committerEmail: parts[8],
+      committerDate: parts[9],
       stats: stats.trim(),
     };
   } catch {
@@ -168,16 +172,16 @@ export function getCommitsByDate(date: string): CommitEntry[] {
   const after = prev.toISOString().slice(0, 10);
   const before = next.toISOString().slice(0, 10);
   const raw = git(
-    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%aI${sep}%cI" --after="${after}" --before="${before}"`,
+    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" --after="${after}" --before="${before}"`,
   );
   if (!raw) return [];
   return raw
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, d, committerDate] = line.split(sep);
+      const [hash, fullHash, message, author, authorEmail, d, committer, committerEmail, committerDate] = line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
-      return { hash, fullHash, message, author, date: d, committerDate, onRemote };
+      return { hash, fullHash, message, author, authorEmail, date: d, committer, committerEmail, committerDate, onRemote };
     })
     .filter((c) => c.date.startsWith(date));
 }
@@ -270,48 +274,54 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
   }
 }
 
-export function rewriteCommitDate(hash: string, newDate: string): void {
+export function rewriteCommit(
+  hash: string,
+  opts: {
+    authorDate: string;
+    committerDate?: string;
+    author?: string;
+    committerName?: string;
+    committerEmail?: string;
+  },
+): void {
+  const effectiveCommitterDate = opts.committerDate ?? opts.authorDate;
+
   if (isHeadCommit(hash)) {
-    // Read the current commit message to preserve it
-    const subject = git(`git log -1 --format="%s" ${hash}`);
-    const body = git(`git log -1 --format="%b" ${hash}`);
-    const fullMsg = body ? `${subject}\n\n${body}` : subject;
-    const msgFile = join(tmpdir(), `git-heatmap-date-${Date.now()}.txt`);
-    writeFileSync(msgFile, fullMsg);
-    try {
-      execSync(`git commit --amend -F ${JSON.stringify(msgFile)} --date=${JSON.stringify(newDate)}`, {
-        encoding: 'utf8',
-        stdio: 'pipe',
-        env: { ...process.env, GIT_COMMITTER_DATE: newDate },
-      });
-    } finally {
-      try {
-        unlinkSync(msgFile);
-      } catch {
-        /* ignore */
-      }
-    }
+    const env: Record<string, string> = {
+      ...(process.env as Record<string, string>),
+      GIT_COMMITTER_DATE: effectiveCommitterDate,
+    };
+    if (opts.committerName) env.GIT_COMMITTER_NAME = opts.committerName;
+    if (opts.committerEmail) env.GIT_COMMITTER_EMAIL = opts.committerEmail;
+
+    let cmd = `git commit --amend --no-edit --date=${JSON.stringify(opts.authorDate)}`;
+    if (opts.author) cmd += ` --author=${JSON.stringify(opts.author)}`;
+
+    execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
     return;
   }
 
   const resolved = git(`git rev-parse ${hash}`);
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
-    // Start interactive rebase, pausing at the target commit
-    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`, {
+    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${resolved}~1`, {
       encoding: 'utf8',
       stdio: 'pipe',
     });
-    // Amend the date while paused
-    execSync(`git commit --amend --no-edit --date=${JSON.stringify(newDate)}`, {
-      encoding: 'utf8',
-      stdio: 'pipe',
-      env: { ...process.env, GIT_COMMITTER_DATE: newDate },
-    });
-    // Continue rebase
+
+    const env: Record<string, string> = {
+      ...(process.env as Record<string, string>),
+      GIT_COMMITTER_DATE: effectiveCommitterDate,
+    };
+    if (opts.committerName) env.GIT_COMMITTER_NAME = opts.committerName;
+    if (opts.committerEmail) env.GIT_COMMITTER_EMAIL = opts.committerEmail;
+
+    let cmd = `git commit --amend --no-edit --date=${JSON.stringify(opts.authorDate)}`;
+    if (opts.author) cmd += ` --author=${JSON.stringify(opts.author)}`;
+
+    execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
     execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
   } catch (err) {
-    // Abort rebase on failure to avoid leaving repo in broken state
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
     } catch {

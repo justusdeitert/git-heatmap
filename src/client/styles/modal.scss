@@ -90,10 +90,13 @@
 .modal-meta {
   font-size: 13px;
   margin-bottom: 16px;
+  position: relative;
 
-  &-row { padding: 4px 0; line-height: 1.5; }
-  &-label { color: var(--text-muted); min-width: 80px; display: inline-block; }
+  &-row { padding: 2px 0; line-height: 22px; display: flex; align-items: flex-start; flex-wrap: wrap; padding-left: 80px; min-height: 0; }
+  &-label { color: var(--text-muted); width: 80px; flex-shrink: 0; margin-left: -80px; }
   &-date { color: var(--text-muted); font-size: 12px; }
+  &-email { color: var(--text-muted); font-size: 12px; margin-left: 3px; }
+  &-time { white-space: nowrap; font-size: 12px; width: 100%; margin-top: 1px; }
 }
 
 .modal-stats {
@@ -139,7 +142,7 @@
   .modal-subject { flex: 1; min-width: 0; }
 }
 
-.rename-btn {
+.modal-edit-btn {
   flex-shrink: 0;
   background: none;
   border: 1px solid var(--border);
@@ -154,6 +157,12 @@
   &:hover { color: var(--accent); border-color: var(--accent); }
 }
 
+.modal-meta .modal-edit-btn {
+  position: absolute;
+  right: 0;
+  top: 2px;
+}
+
 .edit-icon { width: 14px; height: 14px; }
 
 .rename-form { margin: 8px 0 4px; }
@@ -163,6 +172,8 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 2px;
 }
 
 .rename-input {
@@ -184,7 +195,7 @@
 .rename-actions {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 4px;
   justify-content: flex-end;
 }
 
@@ -221,25 +232,51 @@
   margin-top: 6px;
 }
 
-.date-edit-btn {
-  background: none;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px 5px;
-  display: inline-flex;
-  align-items: center;
-  vertical-align: middle;
-  margin-left: 6px;
-  transition: color .15s, border-color .15s;
 
-  &:hover { color: var(--accent); border-color: var(--accent); }
-
-  .edit-icon { width: 12px; height: 12px; }
+.date-edit-form {
+  margin: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.date-edit-form { margin: 6px 0 4px; }
+.date-link-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+
+  input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+}
+
+.date-edit-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 70px;
+}
+
+.edit-field-group {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  align-items: center;
+
+  .date-edit-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.author-edit-input {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+}
 
 .date-edit-input {
   padding: 6px 10px;
