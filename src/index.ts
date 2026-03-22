@@ -3,6 +3,7 @@
 import { exec } from 'node:child_process';
 import { watch } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import https from 'node:https';
 import { join } from 'node:path';
 import { parseArgs } from '@/args';
 import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear, getMonthLabels } from '@/calendar';
@@ -25,6 +26,7 @@ import {
   getRecentCommits,
   getReflogTraces,
   getRemoteUrl,
+  removeRemote,
   getRepoName,
   getUncommittedFiles,
   isInsideRepo,
@@ -487,6 +489,56 @@ function handleRebaseRestore(res: ServerResponse): void {
   }
 }
 
+function gitUrlToHttps(url: string): string | null {
+  // SSH format: git@github.com:user/repo.git
+  const sshMatch = url.match(/^git@([^:]+):(.+?)(\.git)?$/);
+  if (sshMatch) return `https://${sshMatch[1]}/${sshMatch[2]}`;
+  // HTTPS format: https://github.com/user/repo.git
+  const httpsMatch = url.match(/^https?:\/\/(.+?)(?:\.git)?$/);
+  if (httpsMatch) return `https://${httpsMatch[1]}`;
+  return null;
+}
+
+function handleRemoteRemove(res: ServerResponse): void {
+  try {
+    removeRemote();
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
+function handleRemoteCheck(res: ServerResponse): void {
+  const raw = getRemoteUrl();
+  if (!raw) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ online: false, url: null }));
+    return;
+  }
+  const httpsUrl = gitUrlToHttps(raw);
+  if (!httpsUrl) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ online: false, url: null }));
+    return;
+  }
+  let responded = false;
+  const respond = (online: boolean) => {
+    if (responded) return;
+    responded = true;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ online, url: httpsUrl }));
+  };
+  const reqObj = https.request(httpsUrl, { method: 'HEAD', timeout: 5000 }, (response) => {
+    response.resume();
+    respond(response.statusCode !== undefined && response.statusCode < 400);
+  });
+  reqObj.on('error', () => respond(false));
+  reqObj.on('timeout', () => { reqObj.destroy(); respond(false); });
+  reqObj.end();
+}
+
 function handleRebaseDismiss(res: ServerResponse): void {
   try {
     dismissBackup();
@@ -520,6 +572,8 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (parsed.pathname === '/api/rebase/dismiss' && req.method === 'POST') return handleRebaseDismiss(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'DELETE') return handleReflogDelete(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'GET') return handleReflogGet(res);
+  if (parsed.pathname === '/api/remote-check') return handleRemoteCheck(res);
+  if (parsed.pathname === '/api/remote' && req.method === 'DELETE') return handleRemoteRemove(res);
 
   if (parsed.pathname !== '/' && parsed.pathname !== '/index.html') {
     res.writeHead(404, { 'Content-Type': 'text/plain' });

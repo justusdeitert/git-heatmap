@@ -44,6 +44,10 @@ export function getRemoteUrl(): string | null {
   }
 }
 
+export function removeRemote(): void {
+  git('git remote remove origin');
+}
+
 export function getCommitDates(): string[] {
   return git('git log --format="%aI" --no-merges').split('\n').filter(Boolean);
 }

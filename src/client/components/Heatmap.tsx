@@ -9,7 +9,11 @@ import {
   filterByDate,
   firstCommit,
   heatmapSvg,
+  remoteHttpUrl,
+  remoteOnline,
+  remoteRemoving,
   remoteUrl,
+  removeRemoteOrigin,
   selectYear,
   tooltipText,
   tooltipVisible,
@@ -126,7 +130,14 @@ export function Heatmap() {
         </div>
         <div class="meta-item">
           <span dangerouslySetInnerHTML={{ __html: DOT_ICON }} />{' '}
-          {remoteUrl.value ?? <span style="color:var(--accent)">No remote</span>}
+          {remoteUrl.value ? (
+            remoteOnline.value && remoteHttpUrl.value ? (
+              <a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{remoteUrl.value}</a>
+            ) : (
+              <>{remoteUrl.value}{remoteOnline.value === false && <><span style="color:var(--accent); margin-left:6px" title="Repository not found or unreachable">(offline)</span><button class="remote-remove-btn" onClick={() => { if (confirm('Remove remote origin? This will unlink the remote from your local repo.')) removeRemoteOrigin(); }} disabled={remoteRemoving.value} title="Remove stale remote origin">&times;</button></>}</>)
+          ) : (
+            <span style="color:var(--accent)">No remote</span>
+          )}
         </div>
         <div class="meta-item">
           <span dangerouslySetInnerHTML={{ __html: DOT_ICON }} /> Generated: {now}

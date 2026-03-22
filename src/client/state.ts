@@ -116,6 +116,11 @@ export const rebaseHasBackup = signal(false);
 export const rebaseLoading = signal(false);
 export const rebaseError = signal<string | null>(null);
 
+// Remote check
+export const remoteOnline = signal<boolean | null>(null);
+export const remoteHttpUrl = signal<string | null>(null);
+export const remoteRemoving = signal(false);
+
 // Tooltip
 export const tooltipText = signal('');
 export const tooltipVisible = signal(false);
@@ -475,4 +480,34 @@ export function initFromServerData(data: InitialData): void {
     data.availableYears.length > 0 ? data.availableYears[data.availableYears.length - 1] : new Date().getFullYear();
   fetchCommits(1);
   checkRebaseStatus();
+  checkRemoteStatus();
+}
+
+async function checkRemoteStatus(): Promise<void> {
+  try {
+    const res = await fetch('/api/remote-check');
+    const data = await res.json();
+    remoteOnline.value = data.online ?? false;
+    remoteHttpUrl.value = data.url ?? null;
+  } catch {
+    remoteOnline.value = false;
+  }
+}
+
+export async function removeRemoteOrigin(): Promise<void> {
+  remoteRemoving.value = true;
+  try {
+    const res = await fetch('/api/remote', { method: 'DELETE' });
+    if (!res.ok) throw new Error('Failed to remove remote');
+    // Update local state
+    if (initialData.value) {
+      initialData.value = { ...initialData.value, remoteUrl: null };
+    }
+    remoteOnline.value = null;
+    remoteHttpUrl.value = null;
+  } catch (err) {
+    networkError.value = (err as Error).message;
+  } finally {
+    remoteRemoving.value = false;
+  }
 }
