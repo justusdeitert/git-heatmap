@@ -1,6 +1,7 @@
 import { CopyHash } from '@/client/components/CopyHash';
 import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg';
-import type { CommitEntry } from '@/client/state';
+import TAG_ICON from '@/client/icons/tag.svg';
+import type { CommitEntry, RefDecoration } from '@/client/state';
 import {
   activeDate,
   clearDateFilter,
@@ -16,6 +17,20 @@ import {
   tooltipY,
 } from '@/client/state';
 import { fullDateTime } from '@/client/utils';
+
+function RefBadges({ refs }: { refs: RefDecoration[] }) {
+  if (!refs || refs.length === 0) return null;
+  return (
+    <>
+      {refs.map((ref) => (
+        <span key={`${ref.type}-${ref.name}`} class={`ref-badge ref-${ref.type}`}>
+          {ref.type === 'tag' && <span class="ref-icon" dangerouslySetInnerHTML={{ __html: TAG_ICON }} />}
+          {ref.name}
+        </span>
+      ))}
+    </>
+  );
+}
 
 function CommitRow({ commit }: { commit: CommitEntry }) {
   const dateMismatch = commit.date !== commit.committerDate ||
@@ -41,6 +56,7 @@ function CommitRow({ commit }: { commit: CommitEntry }) {
       <CopyHash hash={commit.hash} full={commit.fullHash} />
       <span class="commit-msg" onClick={openDetail}>
         {commit.message}
+        <RefBadges refs={commit.refs} />
       </span>
       <span class="commit-meta" onClick={openDetail}>
         {commit.author} &middot; {fullDateTime(commit.date)}

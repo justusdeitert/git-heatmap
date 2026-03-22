@@ -1,9 +1,9 @@
 import { computed, signal } from '@preact/signals';
-import type { CommitEntry } from '@/types';
+import type { CommitEntry, RefDecoration } from '@/types';
 
 // --- Types ---
 
-export type { CommitEntry };
+export type { CommitEntry, RefDecoration };
 
 export interface CommitResponse {
   commits: CommitEntry[];
@@ -26,6 +26,7 @@ export interface CommitDetailData {
   stats: string;
   editable: boolean;
   reason?: string;
+  refs: RefDecoration[];
 }
 
 export interface ReflogEntry {

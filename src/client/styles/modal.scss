@@ -29,9 +29,15 @@
 
 .modal-top-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 16px;
+}
+
+.modal-top-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .modal-close {
@@ -165,7 +171,7 @@
 
 .edit-icon { width: 14px; height: 14px; }
 
-.rename-form { margin: 8px 0 4px; }
+.rename-form { margin: 8px 0 8px; }
 
 .date-edit-row {
   display: flex;

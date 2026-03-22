@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
 import EDIT_SVG from '@/client/icons/edit.svg';
-import type { CommitDetailData } from '@/client/state';
+import TAG_ICON from '@/client/icons/tag.svg';
+import type { CommitDetailData, RefDecoration } from '@/client/state';
 import { closeModal, modalData, modalLoading, modalVisible, renameCommit, tooltipText, tooltipVisible, tooltipX, tooltipY, updateCommit } from '@/client/state';
 import { esc, formatFullDate, relTime, toLocalDateTimeValue, toLocalISOString } from '@/client/utils';
 
@@ -314,6 +315,20 @@ function ModalBody({ data }: { data: CommitDetailData }) {
   );
 }
 
+function ModalRefBadges({ refs }: { refs: RefDecoration[] }) {
+  if (!refs || refs.length === 0) return null;
+  return (
+    <span class="modal-refs">
+      {refs.map((ref) => (
+        <span key={`${ref.type}-${ref.name}`} class={`ref-badge ref-${ref.type}`}>
+          {ref.type === 'tag' && <span class="ref-icon" dangerouslySetInnerHTML={{ __html: TAG_ICON }} />}
+          {ref.name}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function CommitModal() {
   const visible = modalVisible.value;
   const data = modalData.value;
@@ -334,11 +349,14 @@ export function CommitModal() {
     >
       <div class="modal">
         <div class="modal-top-bar">
-          {data ? (
-            <CopyHash hash={data.fullHash} full={data.fullHash} class="modal-hash" />
-          ) : (
-            <code class="modal-hash" />
-          )}
+          <div class="modal-top-left">
+            {data ? (
+              <CopyHash hash={data.fullHash} full={data.fullHash} class="modal-hash" />
+            ) : (
+              <code class="modal-hash" />
+            )}
+            {data && data.refs.length > 0 && <ModalRefBadges refs={data.refs} />}
+          </div>
           <button class="modal-close" onClick={() => closeModal()}>
             &times;
           </button>

@@ -2,7 +2,7 @@ import { exec, execSync } from 'node:child_process';
 import { unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { CommitEntry } from '@/types';
+import type { CommitEntry, RefDecoration } from '@/types';
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim();
 const execAsync = (cmd: string): Promise<void> =>
@@ -77,6 +77,7 @@ export interface CommitDetail {
   committerEmail: string;
   committerDate: string;
   stats: string;
+  refs: RefDecoration[];
 }
 
 export function getCommitCount(): number {
@@ -116,27 +117,52 @@ function getUnpushedCommitSet(): Set<string> | null {
   }
 }
 
+let cachedRemoteNames: string[] | null = null;
+
+function getRemoteNames(): string[] {
+  if (cachedRemoteNames) return cachedRemoteNames;
+  try {
+    cachedRemoteNames = git('git remote').split('\n').filter(Boolean);
+  } catch {
+    cachedRemoteNames = [];
+  }
+  return cachedRemoteNames;
+}
+
+function parseRefs(raw: string): RefDecoration[] {
+  if (!raw) return [];
+  const remotes = getRemoteNames();
+  return raw.split(',').map((s) => s.trim()).filter(Boolean).map((ref) => {
+    if (ref.startsWith('tag: ')) return { name: ref.slice(5), type: 'tag' as const };
+    if (ref.startsWith('HEAD -> ')) return { name: ref.slice(8), type: 'head' as const };
+    if (ref === 'HEAD') return { name: 'HEAD', type: 'head' as const };
+    if (remotes.some((r) => ref.startsWith(`${r}/`))) return { name: ref, type: 'remote' as const };
+    return { name: ref, type: 'branch' as const };
+  });
+}
+
 export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
   const unpushed = getUnpushedCommitSet();
   const sep = '---GD---';
   const raw = git(
-    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" --skip=${skip} -${count}`,
+    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" --skip=${skip} -${count}`,
   );
   if (!raw) return [];
   return raw
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate] = line.split(sep);
+      const [hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, ...refParts] = line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
-      return { hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, onRemote };
+      const refs = parseRefs(refParts.join(sep));
+      return { hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, onRemote, refs };
     });
 }
 
 export function getCommitDetail(hash: string): CommitDetail | null {
   const sep = '---GD---';
   try {
-    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" ${hash}`);
+    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" ${hash}`);
     if (!raw) return null;
     const parts = raw.split(sep);
     const stats = git(`git diff --stat ${hash}~1 ${hash} 2>/dev/null || git diff --stat --root ${hash}`);
@@ -152,6 +178,7 @@ export function getCommitDetail(hash: string): CommitDetail | null {
       committerEmail: parts[8],
       committerDate: parts[9],
       stats: stats.trim(),
+      refs: parseRefs(parts.slice(10).join(sep)),
     };
   } catch {
     return null;
@@ -172,16 +199,17 @@ export function getCommitsByDate(date: string): CommitEntry[] {
   const after = prev.toISOString().slice(0, 10);
   const before = next.toISOString().slice(0, 10);
   const raw = git(
-    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI" --after="${after}" --before="${before}"`,
+    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" --after="${after}" --before="${before}"`,
   );
   if (!raw) return [];
   return raw
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, authorEmail, d, committer, committerEmail, committerDate] = line.split(sep);
+      const [hash, fullHash, message, author, authorEmail, d, committer, committerEmail, committerDate, ...refParts] = line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
-      return { hash, fullHash, message, author, authorEmail, date: d, committer, committerEmail, committerDate, onRemote };
+      const refs = parseRefs(refParts.join(sep));
+      return { hash, fullHash, message, author, authorEmail, date: d, committer, committerEmail, committerDate, onRemote, refs };
     })
     .filter((c) => c.date.startsWith(date));
 }

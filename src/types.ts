@@ -25,6 +25,11 @@ export interface Stats {
   busiestCount: number;
 }
 
+export interface RefDecoration {
+  name: string;
+  type: 'head' | 'branch' | 'remote' | 'tag';
+}
+
 export interface CommitEntry {
   hash: string;
   fullHash: string;
@@ -36,6 +41,7 @@ export interface CommitEntry {
   committerEmail: string;
   committerDate: string;
   onRemote: boolean;
+  refs: RefDecoration[];
 }
 
 export interface ReflogTrace {
