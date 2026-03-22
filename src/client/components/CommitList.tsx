@@ -169,7 +169,7 @@ export function CommitList() {
           ({commitTotal})
         </span>
         <DateFilter />
-        {editableCount > 0 && (
+        {(editableCount > 0 || inSelectionMode) && (
           <button
             class={`select-toggle${inSelectionMode ? ' select-toggle-active' : ''}`}
             onClick={() => toggleSelectionMode()}
