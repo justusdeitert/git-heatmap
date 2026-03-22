@@ -104,6 +104,12 @@ export const confirmVisible = signal(false);
 // Network error
 export const networkError = signal<string | null>(null);
 
+// Bulk selection
+export const selectionMode = signal(false);
+export const selectedHashes = signal<Set<string>>(new Set());
+export const bulkShiftLoading = signal(false);
+export const bulkShiftError = signal<string | null>(null);
+
 // Tooltip
 export const tooltipText = signal('');
 export const tooltipVisible = signal(false);
@@ -291,6 +297,61 @@ export async function clearTraces(): Promise<void> {
   }
   traces.value = [];
   confirmVisible.value = false;
+}
+
+// --- Bulk selection ---
+
+export function toggleSelectionMode(): void {
+  selectionMode.value = !selectionMode.value;
+  if (!selectionMode.value) {
+    selectedHashes.value = new Set();
+    bulkShiftError.value = null;
+  }
+}
+
+export function toggleCommitSelection(fullHash: string): void {
+  const next = new Set(selectedHashes.value);
+  if (next.has(fullHash)) next.delete(fullHash);
+  else next.add(fullHash);
+  selectedHashes.value = next;
+}
+
+export function selectAllEditable(): void {
+  const editable = commits.value.filter((c) => !c.onRemote);
+  selectedHashes.value = new Set(editable.map((c) => c.fullHash));
+}
+
+export function deselectAll(): void {
+  selectedHashes.value = new Set();
+}
+
+export async function bulkShift(shiftMs: number): Promise<void> {
+  const hashes = [...selectedHashes.value];
+  if (hashes.length === 0 || shiftMs === 0) return;
+
+  bulkShiftLoading.value = true;
+  bulkShiftError.value = null;
+  reloadSuppressed.value = true;
+  try {
+    const res = await fetch('/api/commits/bulk-shift', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ hashes, shiftMs }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to shift commits');
+    }
+    selectionMode.value = false;
+    selectedHashes.value = new Set();
+    bulkShiftError.value = null;
+    await fetchCommits(currentPage.value);
+  } catch (err) {
+    bulkShiftError.value = err instanceof Error ? err.message : 'Failed to shift commits';
+  } finally {
+    bulkShiftLoading.value = false;
+    reloadSuppressed.value = false;
+  }
 }
 
 // --- SSE ---

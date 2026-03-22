@@ -12,6 +12,7 @@ import '@/client/styles/modal.scss';
 import '@/client/styles/trace.scss';
 
 import { AuthorModal } from '@/client/components/AuthorModal';
+import { BulkShiftBar } from '@/client/components/BulkShiftBar';
 import { CommitList } from '@/client/components/CommitList';
 import { CommitModal } from '@/client/components/CommitModal';
 import { DirtyBanner } from '@/client/components/DirtyBanner';
@@ -48,6 +49,7 @@ function App() {
         <CommitList />
         <ReflogPanel />
       </div>
+      <BulkShiftBar />
       <Footer />
       <Tooltip />
       <CommitModal />

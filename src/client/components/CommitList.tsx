@@ -9,8 +9,14 @@ import {
   commitTotal,
   commitTotalPages,
   currentPage,
+  deselectAll,
   fetchCommits,
+  selectAllEditable,
+  selectedHashes,
+  selectionMode,
   showCommitDetail,
+  toggleCommitSelection,
+  toggleSelectionMode,
   tooltipText,
   tooltipVisible,
   tooltipX,
@@ -37,6 +43,9 @@ function CommitRow({ commit }: { commit: CommitEntry }) {
     commit.author !== commit.committer ||
     commit.authorEmail !== commit.committerEmail;
   const openDetail = () => showCommitDetail(commit.fullHash);
+  const inSelectionMode = selectionMode.value;
+  const isSelected = selectedHashes.value.has(commit.fullHash);
+  const isEditable = !commit.onRemote;
 
   const showWarnTooltip = (e: MouseEvent, text: string) => {
     tooltipText.value = text;
@@ -52,7 +61,17 @@ function CommitRow({ commit }: { commit: CommitEntry }) {
   };
 
   return (
-    <div class="commit-row">
+    <div class={`commit-row${inSelectionMode ? ' commit-row-selectable' : ''}${isSelected ? ' commit-row-selected' : ''}`}>
+      {inSelectionMode && (
+        <label class={`commit-checkbox${!isEditable ? ' commit-checkbox-disabled' : ''}`}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            disabled={!isEditable}
+            onChange={() => toggleCommitSelection(commit.fullHash)}
+          />
+        </label>
+      )}
       <CopyHash hash={commit.hash} full={commit.fullHash} />
       <span class="commit-msg" onClick={openDetail}>
         {commit.message}
@@ -127,6 +146,11 @@ function Pagination() {
 }
 
 export function CommitList() {
+  const inSelectionMode = selectionMode.value;
+  const selected = selectedHashes.value;
+  const editableCount = commits.value.filter((c) => !c.onRemote).length;
+  const allEditableSelected = editableCount > 0 && commits.value.filter((c) => !c.onRemote).every((c) => selected.has(c.fullHash));
+
   return (
     <div class="card">
       <div class="card-title">
@@ -135,7 +159,31 @@ export function CommitList() {
           ({commitTotal})
         </span>
         <DateFilter />
+        {editableCount > 0 && (
+          <button
+            class={`select-toggle${inSelectionMode ? ' select-toggle-active' : ''}`}
+            onClick={() => toggleSelectionMode()}
+          >
+            {inSelectionMode ? 'Cancel' : 'Select'}
+          </button>
+        )}
       </div>
+      {inSelectionMode && editableCount > 0 && (
+        <div class="select-bar">
+          <label class="select-all-label">
+            <input
+              type="checkbox"
+              checked={allEditableSelected}
+              ref={(el) => { if (el) el.indeterminate = !allEditableSelected && selected.size > 0; }}
+              onChange={() => allEditableSelected ? deselectAll() : selectAllEditable()}
+            />
+            Select editable on this page ({editableCount})
+          </label>
+          {selected.size > 0 && (
+            <span class="select-count">{selected.size} selected</span>
+          )}
+        </div>
+      )}
       <div class="commit-list" id="commitList">
         {commits.value.length === 0 ? (
           <div class="commit-empty">No commits found</div>

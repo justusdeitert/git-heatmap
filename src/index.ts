@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { parseArgs } from '@/args';
 import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear, getMonthLabels } from '@/calendar';
 import {
+  bulkShiftCommits,
   clearReflog,
   getAuthorCount,
   getAuthorStats,
@@ -270,6 +271,48 @@ async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse,
   }
 }
 
+async function handleBulkShift(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    const body = await parseRequestBody<{ hashes?: string[]; shiftMs?: number }>(req);
+
+    if (!Array.isArray(body.hashes) || body.hashes.length === 0) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'hashes must be a non-empty array' }));
+      return;
+    }
+    if (typeof body.shiftMs !== 'number' || body.shiftMs === 0) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'shiftMs must be a non-zero number' }));
+      return;
+    }
+    // Validate hash format
+    const hashPattern = /^[a-f0-9]{4,40}$/;
+    if (!body.hashes.every((h) => hashPattern.test(h))) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid hash format' }));
+      return;
+    }
+
+    // Validate all commits are editable (not pushed to remote)
+    for (const h of body.hashes) {
+      const status = getCommitEditableStatus(h);
+      if (!status.editable) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: status.reason || `Commit ${h} is not editable` }));
+        return;
+      }
+    }
+
+    bulkShiftCommits(body.hashes, body.shiftMs);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, shifted: body.hashes.length }));
+  } catch (err) {
+    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
 function handleCommitDetail(res: ServerResponse, hash: string): void {
   try {
     const detail = getCommitDetail(hash);
@@ -418,6 +461,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (commitMatch) return handleCommitDetail(res, commitMatch[1]);
   if (parsed.pathname === '/api/stats') return handleStats(res);
   if (parsed.pathname === '/api/calendar') return handleCalendar(res, parsed.searchParams);
+  if (parsed.pathname === '/api/commits/bulk-shift' && req.method === 'PUT') return handleBulkShift(req, res);
   if (parsed.pathname === '/api/commits') return handleCommits(res, parsed.searchParams);
   if (parsed.pathname === '/api/authors') return handleAuthors(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'DELETE') return handleReflogDelete(res);

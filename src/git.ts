@@ -409,3 +409,98 @@ export async function clearReflog(): Promise<void> {
   await execAsync('git reflog expire --expire=now --all');
   await execAsync('git gc --prune=now');
 }
+
+export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
+  if (hashes.length === 0) return;
+  if (hasUncommittedChanges()) {
+    throw new Error('You have uncommitted changes. Please commit or stash them first.');
+  }
+
+  // Resolve full hashes and collect dates
+  const targets = hashes.map((h) => {
+    const fullHash = git(`git rev-parse ${h}`);
+    const authorDate = git(`git log -1 --format="%aI" ${fullHash}`);
+    const committerDate = git(`git log -1 --format="%cI" ${fullHash}`);
+    return { fullHash, authorDate, committerDate };
+  });
+  const targetSet = new Set(targets.map((t) => t.fullHash));
+
+  // Build a map of hash → shifted dates
+  const dateMap = new Map<string, { authorDate: string; committerDate: string }>();
+  for (const t of targets) {
+    const newAuthor = new Date(new Date(t.authorDate).getTime() + shiftMs).toISOString();
+    const newCommitter = new Date(new Date(t.committerDate).getTime() + shiftMs).toISOString();
+    dateMap.set(t.fullHash, { authorDate: newAuthor, committerDate: newCommitter });
+  }
+
+  // Find the oldest commit in the selection (furthest from HEAD)
+  const allHashes = git('git rev-list HEAD').split('\n').filter(Boolean);
+  const sorted = allHashes.filter((h) => targetSet.has(h));
+  if (sorted.length === 0) throw new Error('None of the selected commits are on the current branch');
+
+  const oldest = sorted[sorted.length - 1];
+  const headHash = allHashes[0];
+
+  // If all selected commits include HEAD, or it's a single HEAD commit
+  if (sorted.length === 1 && sorted[0] === headHash) {
+    const dates = dateMap.get(headHash)!;
+    execSync(
+      `git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`,
+      { encoding: 'utf8', stdio: 'pipe', env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate } },
+    );
+    return;
+  }
+
+  // Build sed script to mark selected commits as 'edit'
+  const sedParts = sorted.map((h) => `s/^pick ${h.slice(0, 7)}/edit ${h.slice(0, 7)}/`).join(';');
+  const seqEditor = `sed -i.bak '${sedParts}'`;
+
+  try {
+    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${oldest}~1`, {
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+
+    // Now git has stopped at the first 'edit' commit. Loop through all of them.
+    let edited = 0;
+    const maxIterations = sorted.length * 2;
+    let iterations = 0;
+    while (iterations < maxIterations) {
+      iterations++;
+      const currentHash = git('git rev-parse HEAD');
+      const dates = dateMap.get(currentHash);
+      if (dates) {
+        execSync(
+          `git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`,
+          { encoding: 'utf8', stdio: 'pipe', env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate } },
+        );
+        edited++;
+      }
+
+      // Continue rebase — if it finishes, we're done
+      try {
+        execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
+        // Rebase completed without stopping again
+        break;
+      } catch {
+        // Rebase stopped at next 'edit' commit — check if still in progress
+        try {
+          const rebaseDir = join(git('git rev-parse --git-dir'), 'rebase-merge');
+          execSync(`test -d ${JSON.stringify(rebaseDir)}`, { stdio: 'pipe' });
+          // Still rebasing, continue loop
+        } catch {
+          break;
+        }
+      }
+    }
+
+    if (edited < sorted.length) {
+      throw new Error(`Expected to shift ${sorted.length} commits but only edited ${edited}`);
+    }
+  } catch (err) {
+    try {
+      execSync('git rebase --abort', { stdio: 'pipe' });
+    } catch { /* ignore */ }
+    throw err;
+  }
+}

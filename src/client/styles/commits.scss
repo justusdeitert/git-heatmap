@@ -1,5 +1,3 @@
-.commit-list { }
-
 .commit-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -10,6 +8,10 @@
   font-size: 13px;
 
   &:last-child { border-bottom: none; }
+
+  &.commit-row-selectable {
+    grid-template-columns: 20px auto 1fr auto;
+  }
 }
 
 .commit-hash {
@@ -188,3 +190,189 @@
 }
 
 .pag-info { font-size: 12px; color: var(--text-muted); }
+
+// Selection mode
+.select-toggle {
+  margin-left: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover { border-color: var(--accent); color: var(--accent); }
+
+  &.select-toggle-active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+.select-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.select-all-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+
+  input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+}
+
+.select-count { color: var(--accent); font-weight: 500; }
+
+.commit-checkbox {
+  display: flex;
+  align-items: center;
+
+  input[type="checkbox"] {
+    accent-color: var(--accent);
+    cursor: pointer;
+    margin: 0;
+  }
+
+  &.commit-checkbox-disabled {
+    opacity: 0.3;
+    input { cursor: default; }
+  }
+}
+
+.commit-row-selected {
+  background: rgba(88,166,255,0.06);
+  border-radius: 4px;
+}
+
+// Bulk shift floating bar
+.bulk-shift-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.3);
+}
+
+.bulk-shift-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.bulk-shift-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.bulk-shift-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.bulk-shift-select,
+.bulk-shift-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 5px 8px;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: var(--accent); outline: none; }
+  &:disabled { opacity: 0.5; }
+}
+
+.bulk-shift-select {
+  appearance: none;
+  padding-right: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='%237d8590' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12.78 5.22a.749.749 0 0 1 0 1.06l-4.25 4.25a.749.749 0 0 1-1.06 0L3.22 6.28a.749.749 0 1 1 1.06-1.06L8 8.939l3.72-3.719a.749.749 0 0 1 1.06 0Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 12px;
+  cursor: pointer;
+}
+
+.bulk-shift-input {
+  width: 60px;
+  text-align: center;
+}
+
+.bulk-shift-apply {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+
+  &:hover:not(:disabled) { opacity: 0.85; }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.bulk-shift-cancel {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  &:disabled { opacity: 0.5; cursor: default; }
+}
+
+.bulk-shift-error {
+  width: 100%;
+  font-size: 12px;
+  color: #f85149;
+  margin-top: 2px;
+}
+
+.bulk-shift-dirty {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d29922;
+  margin-top: 6px;
+  padding: 8px 12px;
+  background: rgba(210, 153, 34, 0.08);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.bulk-shift-dirty-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
