@@ -265,7 +265,7 @@ async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse,
       }
     }
 
-    rewriteCommit(hash, { authorDate, committerDate, author: authorStr, committerName, committerEmail });
+    rewriteCommit(hash, { authorDate, committerDate, author: authorStr, committerName, committerEmail, preserveTimestamps: body.preserveTimestamps !== false });
     const detail = getCommitDetail(hash);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(detail ?? { ok: true }));

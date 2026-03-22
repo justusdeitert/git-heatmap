@@ -133,6 +133,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [linked, setLinked] = useState(!alreadyDiffers);
+  const [preserveTimestamps, setPreserveTimestamps] = useState(false);
   const authorIdentityRef = useRef<HTMLInputElement>(null);
   const committerIdentityRef = useRef<HTMLInputElement>(null);
   const authorDateRef = useRef<HTMLInputElement>(null);
@@ -145,9 +146,10 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
     setSaving(true);
     setError('');
     try {
-      const opts: { authorDate: string; committerDate?: string; author?: string; committer?: string } = {
+      const opts: { authorDate: string; committerDate?: string; author?: string; committer?: string; preserveTimestamps?: boolean } = {
         authorDate: toLocalISOString(new Date(newAuthorDate)),
         author: newAuthor,
+        preserveTimestamps: !preserveTimestamps,
       };
       if (!linked) {
         const newCommitterDate = committerDateRef.current?.value;
@@ -174,7 +176,15 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
           checked={!linked}
           onChange={(e) => setLinked(!(e.target as HTMLInputElement).checked)}
         />
-        Edit author &amp; committer individually
+        Edit author &amp; committer separately (otherwise committer syncs to author)
+      </label>
+      <label class="date-link-toggle">
+        <input
+          type="checkbox"
+          checked={preserveTimestamps}
+          onChange={(e) => setPreserveTimestamps((e.target as HTMLInputElement).checked)}
+        />
+        Update committer date of subsequent commits
       </label>
 
       {/* Author fields */}

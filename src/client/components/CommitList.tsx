@@ -83,8 +83,8 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
         {outOfOrder && (
           <span
             class="commit-time-warn"
-            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp out of order \u2014 this commit\'s date doesn\'t match its position')}
-            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp out of order \u2014 this commit\'s date doesn\'t match its position')}
+            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp doesn\'t follow chronological order')}
+            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp doesn\'t follow chronological order')}
             onMouseLeave={hideTooltip}
             dangerouslySetInnerHTML={{ __html: CLOCK_ALERT_ICON }}
           />
@@ -198,12 +198,26 @@ export function CommitList() {
         {commits.value.length === 0 ? (
           <div class="commit-empty">No commits found</div>
         ) : (
-          commits.value.map((c, i) => {
-            const prev = commits.value[i - 1];
-            const ts = new Date(c.date).getTime();
-            const outOfOrder = prev && ts > new Date(prev.date).getTime();
-            return <CommitRow key={c.fullHash} commit={c} outOfOrder={outOfOrder} />;
-          })
+          (() => {
+            const list = commits.value;
+            const timestamps = list.map((c) => new Date(c.date).getTime());
+            const flags = new Uint8Array(list.length);
+            // Forward pass: flag commits newer than the smallest seen so far
+            let minTs = Infinity;
+            for (let i = 0; i < timestamps.length; i++) {
+              if (timestamps[i] > minTs) flags[i] = 1;
+              minTs = Math.min(minTs, timestamps[i]);
+            }
+            // Backward pass: flag commits older than the largest seen so far
+            let maxTs = -Infinity;
+            for (let i = timestamps.length - 1; i >= 0; i--) {
+              if (timestamps[i] < maxTs) flags[i] = 1;
+              maxTs = Math.max(maxTs, timestamps[i]);
+            }
+            return list.map((c, i) => (
+              <CommitRow key={c.fullHash} commit={c} outOfOrder={!!flags[i]} />
+            ));
+          })()
         )}
       </div>
       <Pagination />

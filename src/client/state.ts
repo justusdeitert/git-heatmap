@@ -270,15 +270,17 @@ export async function updateCommit(
     committerDate?: string;
     author?: string;
     committer?: string;
+    preserveTimestamps?: boolean;
   },
 ): Promise<void> {
   reloadSuppressed.value = true;
   try {
-    const payload: Record<string, string> = opts.committerDate
+    const payload: Record<string, string | boolean> = opts.committerDate
       ? { authorDate: opts.authorDate, committerDate: opts.committerDate }
       : { date: opts.authorDate };
     if (opts.author) payload.author = opts.author;
     if (opts.committer) payload.committer = opts.committer;
+    if (opts.preserveTimestamps != null) payload.preserveTimestamps = opts.preserveTimestamps;
     const res = await fetch(`/api/commit/${encodeURIComponent(hash)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },

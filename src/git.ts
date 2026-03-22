@@ -374,6 +374,7 @@ export function rewriteCommit(
     author?: string;
     committerName?: string;
     committerEmail?: string;
+    preserveTimestamps?: boolean;
   },
 ): void {
   if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
@@ -398,7 +399,7 @@ export function rewriteCommit(
   createBackupRef();
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
-    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i ${resolved}~1`, {
+    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${resolved}~1`, {
       encoding: 'utf8',
       stdio: 'pipe',
     });
@@ -536,7 +537,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
 
   createBackupRef();
   try {
-    execSync(`git rebase -i ${isRootCommit ? '--root' : `${oldest}~1`}`, {
+    execSync(`git rebase -i --committer-date-is-author-date ${isRootCommit ? '--root' : `${oldest}~1`}`, {
       encoding: 'utf8',
       stdio: 'pipe',
       env: { ...(process.env as Record<string, string>), GIT_SEQUENCE_EDITOR: `"${process.execPath}" "${scriptPath}"` },
