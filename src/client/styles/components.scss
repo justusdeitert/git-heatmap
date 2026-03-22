@@ -112,16 +112,29 @@
   }
 }
 
-.remote-remove-btn {
+.remote-offline,
+.remote-no-remote,
+.remote-online {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  svg { margin-top: 4px; }
+}
+
+.remote-offline { color: #f47067; }
+.remote-no-remote { color: var(--accent); }
+
+.remote-offline-remove {
   background: none;
-  border: 1px solid var(--accent);
-  color: var(--accent);
+  border: 1px solid #f47067;
+  color: #f47067;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
   line-height: 1;
   padding: 1px 5px;
   margin-left: 6px;
-  &:hover { background: var(--accent); color: var(--bg); }
+  &:hover { background: #f47067; color: var(--bg); }
   &:disabled { opacity: 0.5; cursor: not-allowed; }
 }

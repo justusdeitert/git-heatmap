@@ -100,6 +100,7 @@ export const authorModalError = signal<string | null>(null);
 
 // Confirm dialog
 export const confirmVisible = signal(false);
+export const remoteConfirmVisible = signal(false);
 
 // Network error
 export const networkError = signal<string | null>(null);

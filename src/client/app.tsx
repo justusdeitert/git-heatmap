@@ -18,7 +18,7 @@ import { CommitModal } from '@/client/components/CommitModal';
 import { DirtyBanner } from '@/client/components/DirtyBanner';
 import { ErrorBanner } from '@/client/components/ErrorBanner';
 import { Footer, Header } from '@/client/components/Header';
-import { Heatmap } from '@/client/components/Heatmap';
+import { Heatmap, RemoteConfirmDialog } from '@/client/components/Heatmap';
 import { RebaseBanner } from '@/client/components/RebaseBanner';
 import { ConfirmDialog, ReflogPanel } from '@/client/components/ReflogPanel';
 import { StatsCards } from '@/client/components/StatsCards';
@@ -57,6 +57,7 @@ function App() {
       <CommitModal />
       <AuthorModal />
       <ConfirmDialog />
+      <RemoteConfirmDialog />
     </>
   );
 }

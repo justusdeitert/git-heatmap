@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import CLOCK_ICON from '@/client/icons/clock.svg';
 import DOT_ICON from '@/client/icons/dot.svg';
+import REPO_ICON from '@/client/icons/repo.svg';
 import {
   activeDate,
   activeYear,
@@ -9,6 +10,7 @@ import {
   filterByDate,
   firstCommit,
   heatmapSvg,
+  remoteConfirmVisible,
   remoteHttpUrl,
   remoteOnline,
   remoteRemoving,
@@ -129,14 +131,16 @@ export function Heatmap() {
           <span dangerouslySetInnerHTML={{ __html: CLOCK_ICON }} /> First commit: {formatDate(firstCommit.value)}
         </div>
         <div class="meta-item">
-          <span dangerouslySetInnerHTML={{ __html: DOT_ICON }} />{' '}
           {remoteUrl.value ? (
             remoteOnline.value && remoteHttpUrl.value ? (
-              <a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{remoteUrl.value}</a>
+              <span class="remote-online"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}<a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{remoteUrl.value}</a></span>
+            ) : remoteOnline.value === false ? (
+              <span class="remote-offline"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value} <button class="remote-offline-remove" onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }} disabled={remoteRemoving.value} onMouseEnter={(e: MouseEvent) => { tooltipText.value = 'Remote is offline \u2014 click to disconnect'; tooltipVisible.value = true; const el = document.getElementById('tooltip'); if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; } }} onMouseMove={(e: MouseEvent) => { const el = document.getElementById('tooltip'); if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; } }} onMouseLeave={() => { tooltipVisible.value = false; }}>&times;</button></span>
             ) : (
-              <>{remoteUrl.value}{remoteOnline.value === false && <><span style="color:var(--accent); margin-left:6px" title="Repository not found or unreachable">(offline)</span><button class="remote-remove-btn" onClick={() => { if (confirm('Remove remote origin? This will unlink the remote from your local repo.')) removeRemoteOrigin(); }} disabled={remoteRemoving.value} title="Remove stale remote origin">&times;</button></>}</>)
+              <><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value}</>
+            )
           ) : (
-            <span style="color:var(--accent)">No remote</span>
+            <span class="remote-no-remote"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}No remote</span>
           )}
         </div>
         <div class="meta-item">
@@ -168,6 +172,44 @@ function YearSelector() {
           {y}
         </a>
       ))}
+    </div>
+  );
+}
+
+export function RemoteConfirmDialog() {
+  const visible = remoteConfirmVisible.value;
+  const [error, setError] = useState('');
+
+  const handleRemove = async () => {
+    setError('');
+    try {
+      await removeRemoteOrigin();
+      remoteConfirmVisible.value = false;
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  };
+
+  const handleClose = () => {
+    remoteConfirmVisible.value = false;
+    setError('');
+  };
+
+  return (
+    <div class={`modal-overlay${visible ? ' visible' : ''}`} onClick={(e: MouseEvent) => { if (e.target === e.currentTarget) handleClose(); }}>
+      <div class="confirm-modal">
+        <div class="confirm-title">Remove remote origin</div>
+        <div class="confirm-body">
+          This will unlink the remote <strong>{remoteUrl.value}</strong> from your local repository. The remote itself won't be affected.
+        </div>
+        {error && <div class="confirm-error">{error}</div>}
+        <div class="confirm-actions">
+          <button class="rename-cancel" onClick={handleClose}>Cancel</button>
+          <button class="confirm-delete" disabled={remoteRemoving.value} onClick={handleRemove}>
+            {remoteRemoving.value ? 'Removing...' : 'Remove remote'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
