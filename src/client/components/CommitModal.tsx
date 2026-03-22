@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
+import ERROR_SVG from '@/client/icons/error-circle.svg';
 import EDIT_SVG from '@/client/icons/edit.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitDetailData, RefDecoration } from '@/client/state';
-import { closeModal, modalData, modalLoading, modalVisible, renameCommit, tooltipText, tooltipVisible, tooltipX, tooltipY, updateCommit } from '@/client/state';
+import { closeModal, modalData, modalError, modalLoading, modalVisible, renameCommit, tooltipText, tooltipVisible, tooltipX, tooltipY, updateCommit } from '@/client/state';
 import { esc, formatFullDate, relTime, toLocalDateTimeValue, toLocalISOString } from '@/client/utils';
 
 function showBtnTooltip(e: MouseEvent, text: string) {
@@ -333,6 +334,7 @@ export function CommitModal() {
   const visible = modalVisible.value;
   const data = modalData.value;
   const loading = modalLoading.value;
+  const error = modalError.value;
 
   let mouseDownOnOverlay = false;
 
@@ -347,24 +349,27 @@ export function CommitModal() {
         mouseDownOnOverlay = false;
       }}
     >
-      <div class="modal">
+      <div class={`modal${error ? ' modal-has-error' : ''}`}>
         <div class="modal-top-bar">
-          <div class="modal-top-left">
-            {data ? (
+          {data && (
+            <div class="modal-top-left">
               <CopyHash hash={data.fullHash} full={data.fullHash} class="modal-hash" />
-            ) : (
-              <code class="modal-hash" />
-            )}
-            {data && data.refs.length > 0 && <ModalRefBadges refs={data.refs} />}
-          </div>
+              {data.refs.length > 0 && <ModalRefBadges refs={data.refs} />}
+            </div>
+          )}
           <button class="modal-close" onClick={() => closeModal()}>
             &times;
           </button>
         </div>
         <div>
           {loading && <div class="modal-loading">Loading...</div>}
-          {!loading && !data && visible && <div class="modal-loading">Failed to load commit details</div>}
-          {!loading && data && <ModalBody data={data} />}
+          {!loading && error && (
+            <div class="modal-error">
+              <span class="modal-error-icon" dangerouslySetInnerHTML={{ __html: ERROR_SVG }} />
+              {error}
+            </div>
+          )}
+          {!loading && !error && data && <ModalBody data={data} />}
         </div>
       </div>
     </div>

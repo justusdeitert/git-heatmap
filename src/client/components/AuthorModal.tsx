@@ -1,9 +1,11 @@
 import {
   authorModalData,
+  authorModalError,
   authorModalLoading,
   authorModalVisible,
   closeAuthorModal,
 } from '@/client/state';
+import ERROR_SVG from '@/client/icons/error-circle.svg';
 
 function AuthorBar({ ratio }: { ratio: number }) {
   return (
@@ -17,6 +19,7 @@ export function AuthorModal() {
   const visible = authorModalVisible.value;
   const authors = authorModalData.value;
   const loading = authorModalLoading.value;
+  const error = authorModalError.value;
 
   const totalCommits = authors.reduce((sum, a) => sum + a.commits, 0);
   const maxCommits = authors.length > 0 ? authors[0].commits : 1;
@@ -34,7 +37,7 @@ export function AuthorModal() {
         mouseDownOnOverlay = false;
       }}
     >
-      <div class="modal">
+      <div class={`modal${error ? ' modal-has-error' : ''}`}>
         <div class="modal-top-bar">
           <div class="modal-subject" style={{ marginBottom: 0 }}>Contributors</div>
           <button class="modal-close" onClick={() => closeAuthorModal()}>
@@ -43,8 +46,14 @@ export function AuthorModal() {
         </div>
         <div>
           {loading && <div class="modal-loading">Loading...</div>}
-          {!loading && authors.length === 0 && visible && (
-            <div class="modal-loading">No authors found</div>
+          {!loading && error && (
+            <div class="modal-error">
+              <span class="modal-error-icon" dangerouslySetInnerHTML={{ __html: ERROR_SVG }} />
+              {error}
+            </div>
+          )}
+          {!loading && !error && authors.length === 0 && visible && (
+            <div class="modal-empty">No authors found</div>
           )}
           {!loading && authors.length > 0 && (
             <div class="author-list">

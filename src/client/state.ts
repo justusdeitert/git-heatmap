@@ -86,6 +86,7 @@ export const stats = signal<StatsData | null>(null);
 export const modalVisible = signal(false);
 export const modalData = signal<CommitDetailData | null>(null);
 export const modalLoading = signal(false);
+export const modalError = signal<string | null>(null);
 
 // Author modal
 export interface AuthorEntry {
@@ -95,6 +96,7 @@ export interface AuthorEntry {
 export const authorModalVisible = signal(false);
 export const authorModalData = signal<AuthorEntry[]>([]);
 export const authorModalLoading = signal(false);
+export const authorModalError = signal<string | null>(null);
 
 // Confirm dialog
 export const confirmVisible = signal(false);
@@ -183,14 +185,17 @@ export function selectYear(year: number): void {
 export async function showCommitDetail(fullHash: string): Promise<void> {
   modalLoading.value = true;
   modalData.value = null;
+  modalError.value = null;
   modalVisible.value = true;
   try {
     const res = await fetch(`/api/commit/${encodeURIComponent(fullHash)}`);
-    if (!res.ok) throw new Error('Not found');
+    if (!res.ok) throw new Error(res.status === 404 ? 'Commit not found' : `Server error (${res.status})`);
     const data: CommitDetailData = await res.json();
     modalData.value = data;
-  } catch {
+  } catch (err) {
     modalData.value = null;
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    modalError.value = `Could not load commit — ${msg}`;
   } finally {
     modalLoading.value = false;
   }
@@ -199,19 +204,23 @@ export async function showCommitDetail(fullHash: string): Promise<void> {
 export function closeModal(): void {
   modalVisible.value = false;
   modalData.value = null;
+  modalError.value = null;
 }
 
 export async function showAuthorLeaderboard(): Promise<void> {
   authorModalLoading.value = true;
   authorModalData.value = [];
+  authorModalError.value = null;
   authorModalVisible.value = true;
   try {
     const res = await fetch('/api/authors');
-    if (!res.ok) throw new Error('Failed to load authors');
+    if (!res.ok) throw new Error(`Server error (${res.status})`);
     const data: { authors: AuthorEntry[] } = await res.json();
     authorModalData.value = data.authors;
-  } catch {
+  } catch (err) {
     authorModalData.value = [];
+    const msg = err instanceof Error ? err.message : 'Unknown error';
+    authorModalError.value = `Could not load contributors — ${msg}`;
   } finally {
     authorModalLoading.value = false;
   }
@@ -220,6 +229,7 @@ export async function showAuthorLeaderboard(): Promise<void> {
 export function closeAuthorModal(): void {
   authorModalVisible.value = false;
   authorModalData.value = [];
+  authorModalError.value = null;
 }
 
 export async function renameCommit(hash: string, message: string): Promise<void> {
@@ -287,7 +297,9 @@ export async function clearTraces(): Promise<void> {
 
 export function initSSE(): void {
   const events = new EventSource('/events');
+  let errorCount = 0;
   events.addEventListener('message', async () => {
+    errorCount = 0;
     if (reloadSuppressed.value) return;
     // Refresh all data
     await Promise.all([
@@ -295,6 +307,12 @@ export function initSSE(): void {
       fetchCalendar(activeYear.value ?? new Date().getFullYear()),
       fetchStats(),
     ]);
+  });
+  events.addEventListener('error', () => {
+    if (++errorCount >= 3) {
+      networkError.value = 'Connection to server lost — live updates stopped';
+      events.close();
+    }
   });
 }
 
