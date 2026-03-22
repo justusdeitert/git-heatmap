@@ -15,7 +15,7 @@ export function DirtyBanner() {
         <span class="dirty-text">
           You have {files.length} uncommitted change{files.length === 1 ? '' : 's'} in your working directory.
         </span>
-        <span dangerouslySetInnerHTML={{ __html: CHEVRON_SVG }} />
+        <span class="dirty-chevron" dangerouslySetInnerHTML={{ __html: CHEVRON_SVG }} />
       </button>
       <ul class="dirty-files" style={expanded ? { display: 'block' } : undefined}>
         {files.map((f, i) => (

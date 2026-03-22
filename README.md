@@ -17,7 +17,7 @@ Interactive commit heatmap dashboard for any git repository.
 - Interactive tooltips on hover
 - Live local server — refreshes on page reload
 - Auto-opens browser, stops on Ctrl+C
-- Minimal dependencies (Preact + signals, uses `node:http`)
+- Zero runtime dependencies
 
 ## Quick Start
 
