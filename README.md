@@ -13,6 +13,11 @@ Interactive commit heatmap dashboard for any git repository.
 
 - Stats: total commits, active days, current/longest streak, contributors, busiest day
 - Recent commits panel with messages and timestamps
+- Commit editing — rewrite messages, authors, dates, and emails
+- Bulk timestamp shift — move multiple commits forward or backward in time
+- Reflog panel — browse recent HEAD movements
+- Author leaderboard with per-author commit breakdown
+- Rebase recovery — automatic backup refs with abort/restore UI
 - Dark/light mode (follows system preference)
 - Interactive tooltips on hover
 - Live local server — refreshes on page reload
@@ -85,6 +90,10 @@ git-heatmap/
 
 - Node.js ≥ 18
 - Git
+
+## ⚠️ Warning
+
+Commit editing features use `git rebase` and **rewrite history**. This can break shared branches — only use on local/private branches. If a rebase fails, a recovery banner will appear with options to abort or restore. Always back up important repositories before editing commits.
 
 ## License
 
