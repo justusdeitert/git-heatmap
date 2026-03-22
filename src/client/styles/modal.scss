@@ -356,3 +356,63 @@
   &:hover { opacity: .85; }
   &[disabled] { opacity: .5; cursor: not-allowed; }
 }
+
+// Author leaderboard modal
+.author-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.author-row {
+  display: grid;
+  grid-template-columns: 28px 1fr minmax(80px, 120px) auto;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+
+  &:last-child { border-bottom: none; }
+}
+
+.author-rank {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 500;
+}
+
+.author-name {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.author-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.author-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.author-commits {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.author-pct {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 4px;
+}

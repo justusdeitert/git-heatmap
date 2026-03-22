@@ -9,6 +9,7 @@ import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear
 import {
   clearReflog,
   getAuthorCount,
+  getAuthorStats,
   getCommitCount,
   getCommitDates,
   getCommitDetail,
@@ -393,6 +394,17 @@ function handleDashboard(res: ServerResponse): void {
   }
 }
 
+function handleAuthors(res: ServerResponse): void {
+  try {
+    const authors = getAuthorStats();
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify({ authors }));
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
 // --- HTTP router ---
 
 async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
@@ -407,6 +419,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (parsed.pathname === '/api/stats') return handleStats(res);
   if (parsed.pathname === '/api/calendar') return handleCalendar(res, parsed.searchParams);
   if (parsed.pathname === '/api/commits') return handleCommits(res, parsed.searchParams);
+  if (parsed.pathname === '/api/authors') return handleAuthors(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'DELETE') return handleReflogDelete(res);
   if (parsed.pathname === '/api/reflog' && req.method === 'GET') return handleReflogGet(res);
 

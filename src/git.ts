@@ -61,6 +61,20 @@ export function getAuthorCount(): number {
   return out.split('\n').filter(Boolean).length;
 }
 
+export interface AuthorStat {
+  name: string;
+  commits: number;
+}
+
+export function getAuthorStats(): AuthorStat[] {
+  const out = git('git shortlog -sne --no-merges HEAD');
+  return out.split('\n').filter(Boolean).map((line) => {
+    const match = line.trim().match(/^(\d+)\t(.+?)(?:\s+<.+>)?$/);
+    if (!match) return null;
+    return { name: match[2], commits: parseInt(match[1], 10) };
+  }).filter((a): a is AuthorStat => a !== null);
+}
+
 export function getCurrentBranch(): string {
   return git('git branch --show-current');
 }

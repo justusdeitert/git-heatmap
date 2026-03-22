@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { InitialData } from '@/client/state';
-import { closeModal, initFromServerData, initSSE } from '@/client/state';
+import { closeAuthorModal, closeModal, initFromServerData, initSSE } from '@/client/state';
 
 import '@/client/styles/variables.scss';
 import '@/client/styles/base.scss';
@@ -11,6 +11,7 @@ import '@/client/styles/commits.scss';
 import '@/client/styles/modal.scss';
 import '@/client/styles/trace.scss';
 
+import { AuthorModal } from '@/client/components/AuthorModal';
 import { CommitList } from '@/client/components/CommitList';
 import { CommitModal } from '@/client/components/CommitModal';
 import { DirtyBanner } from '@/client/components/DirtyBanner';
@@ -30,7 +31,7 @@ declare global {
 function App() {
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') { closeModal(); closeAuthorModal(); }
     };
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
@@ -50,6 +51,7 @@ function App() {
       <Footer />
       <Tooltip />
       <CommitModal />
+      <AuthorModal />
       <ConfirmDialog />
     </>
   );

@@ -87,6 +87,15 @@ export const modalVisible = signal(false);
 export const modalData = signal<CommitDetailData | null>(null);
 export const modalLoading = signal(false);
 
+// Author modal
+export interface AuthorEntry {
+  name: string;
+  commits: number;
+}
+export const authorModalVisible = signal(false);
+export const authorModalData = signal<AuthorEntry[]>([]);
+export const authorModalLoading = signal(false);
+
 // Confirm dialog
 export const confirmVisible = signal(false);
 
@@ -190,6 +199,27 @@ export async function showCommitDetail(fullHash: string): Promise<void> {
 export function closeModal(): void {
   modalVisible.value = false;
   modalData.value = null;
+}
+
+export async function showAuthorLeaderboard(): Promise<void> {
+  authorModalLoading.value = true;
+  authorModalData.value = [];
+  authorModalVisible.value = true;
+  try {
+    const res = await fetch('/api/authors');
+    if (!res.ok) throw new Error('Failed to load authors');
+    const data: { authors: AuthorEntry[] } = await res.json();
+    authorModalData.value = data.authors;
+  } catch {
+    authorModalData.value = [];
+  } finally {
+    authorModalLoading.value = false;
+  }
+}
+
+export function closeAuthorModal(): void {
+  authorModalVisible.value = false;
+  authorModalData.value = [];
 }
 
 export async function renameCommit(hash: string, message: string): Promise<void> {
