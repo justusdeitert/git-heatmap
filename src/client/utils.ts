@@ -1,3 +1,5 @@
+import { tooltipText, tooltipVisible, tooltipX, tooltipY } from '@/client/state';
+
 export function relTime(iso: string): string {
   const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (s < 60) return 'just now';
@@ -71,4 +73,16 @@ export async function copyToClipboard(text: string): Promise<void> {
 
 export function esc(s: string): string {
   return s.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+export function tooltipProps(text: string) {
+  const position = (e: MouseEvent) => {
+    const el = document.getElementById('tooltip');
+    if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; }
+  };
+  return {
+    onMouseEnter: (e: MouseEvent) => { tooltipText.value = text; tooltipVisible.value = true; position(e); },
+    onMouseMove: (e: MouseEvent) => { position(e); },
+    onMouseLeave: () => { tooltipVisible.value = false; },
+  };
 }

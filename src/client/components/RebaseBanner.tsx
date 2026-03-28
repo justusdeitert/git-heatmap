@@ -8,7 +8,9 @@ import {
   rebaseInProgress,
   rebaseLoading,
   rebaseRestore,
+  tooltipVisible,
 } from '@/client/state';
+import { tooltipProps } from '@/client/utils';
 
 export function RebaseBanner() {
   if (!rebaseInProgress.value && !rebaseHasBackup.value) return null;
@@ -52,7 +54,8 @@ export function RebaseBanner() {
               class="rebase-btn rebase-btn-dismiss"
               type="button"
               disabled={loading}
-              onClick={() => rebaseDismissBackup()}
+              onClick={() => { tooltipVisible.value = false; rebaseDismissBackup(); }}
+              {...tooltipProps('Permanently deletes the backup')}
             >
               Dismiss
             </button>

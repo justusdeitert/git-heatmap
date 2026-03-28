@@ -18,12 +18,8 @@ import {
   showCommitDetail,
   toggleCommitSelection,
   toggleSelectionMode,
-  tooltipText,
-  tooltipVisible,
-  tooltipX,
-  tooltipY,
 } from '@/client/state';
-import { fullDateTime } from '@/client/utils';
+import { fullDateTime, tooltipProps } from '@/client/utils';
 
 function RefBadges({ refs }: { refs: RefDecoration[] }) {
   if (!refs || refs.length === 0) return null;
@@ -48,19 +44,6 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
   const isSelected = selectedHashes.value.has(commit.fullHash);
   const isEditable = !commit.onRemote;
 
-  const showWarnTooltip = (e: MouseEvent, text: string) => {
-    tooltipText.value = text;
-    tooltipVisible.value = true;
-    const el = document.getElementById('tooltip');
-    if (el) {
-      tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12);
-      tooltipY.value = e.clientY - 36;
-    }
-  };
-  const hideTooltip = () => {
-    tooltipVisible.value = false;
-  };
-
   return (
     <div class={`commit-row${inSelectionMode ? ' commit-row-selectable' : ''}${isSelected ? ' commit-row-selected' : ''}`}>
       {inSelectionMode && (
@@ -83,18 +66,14 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
         {outOfOrder && (
           <span
             class="commit-time-warn"
-            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp doesn\'t follow chronological order')}
-            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Timestamp doesn\'t follow chronological order')}
-            onMouseLeave={hideTooltip}
+            {...tooltipProps('Timestamp doesn\'t follow chronological order')}
             dangerouslySetInnerHTML={{ __html: CLOCK_ALERT_ICON }}
           />
         )}
         {dateMismatch && (
           <span
             class="commit-warn"
-            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Author and committer differ')}
-            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Author and committer differ')}
-            onMouseLeave={hideTooltip}
+            {...tooltipProps('Author and committer differ')}
           >
             &#9888;
           </span>
@@ -102,9 +81,7 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
         {!commit.onRemote && (
           <span
             class="commit-local"
-            onMouseEnter={(e: MouseEvent) => showWarnTooltip(e, 'Not on upstream yet. This commit is still editable.')}
-            onMouseMove={(e: MouseEvent) => showWarnTooltip(e, 'Not on upstream yet. This commit is still editable.')}
-            onMouseLeave={hideTooltip}
+            {...tooltipProps('Not on upstream yet. This commit is still editable.')}
           >
             &#8682;
           </span>

@@ -4,22 +4,9 @@ import ERROR_SVG from '@/client/icons/error-circle.svg';
 import EDIT_SVG from '@/client/icons/edit.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitDetailData, RefDecoration } from '@/client/state';
-import { closeModal, modalData, modalError, modalLoading, modalVisible, renameCommit, tooltipText, tooltipVisible, tooltipX, tooltipY, updateCommit } from '@/client/state';
-import { esc, formatFullDate, relTime, toLocalDateTimeValue, toLocalISOString } from '@/client/utils';
+import { closeModal, modalData, modalError, modalLoading, modalVisible, renameCommit, tooltipVisible, updateCommit } from '@/client/state';
+import { esc, formatFullDate, relTime, toLocalDateTimeValue, toLocalISOString, tooltipProps } from '@/client/utils';
 
-function showBtnTooltip(e: MouseEvent, text: string) {
-  tooltipText.value = text;
-  tooltipVisible.value = true;
-  const el = document.getElementById('tooltip');
-  if (el) {
-    tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12);
-    tooltipY.value = e.clientY - 36;
-  }
-}
-
-function hideBtnTooltip() {
-  tooltipVisible.value = false;
-}
 
 function colorizeStatLine(line: string): string {
   const escaped = esc(line);
@@ -85,10 +72,8 @@ function RenameForm({ data }: { data: CommitDetailData }) {
         {data.editable && !renaming && (
           <button
             class="modal-edit-btn"
-            onClick={() => { hideBtnTooltip(); setRenaming(true); }}
-            onMouseEnter={(e: MouseEvent) => showBtnTooltip(e, 'Rename commit message')}
-            onMouseMove={(e: MouseEvent) => showBtnTooltip(e, 'Rename commit message')}
-            onMouseLeave={hideBtnTooltip}
+            onClick={() => { tooltipVisible.value = false; setRenaming(true); }}
+            {...tooltipProps('Rename commit message')}
           >
             <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
           </button>
@@ -282,10 +267,8 @@ function ModalBody({ data }: { data: CommitDetailData }) {
             {data.editable && (
               <button
                 class="modal-edit-btn"
-                onClick={() => { hideBtnTooltip(); setEditingDate(true); }}
-                onMouseEnter={(e: MouseEvent) => showBtnTooltip(e, 'Edit author & committer details')}
-                onMouseMove={(e: MouseEvent) => showBtnTooltip(e, 'Edit author & committer details')}
-                onMouseLeave={hideBtnTooltip}
+                onClick={() => { tooltipVisible.value = false; setEditingDate(true); }}
+                {...tooltipProps('Edit author & committer details')}
               >
                 <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
               </button>

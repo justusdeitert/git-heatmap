@@ -22,7 +22,7 @@ import {
   tooltipX,
   tooltipY,
 } from '@/client/state';
-import { formatDate } from '@/client/utils';
+import { formatDate, tooltipProps } from '@/client/utils';
 
 const LEGEND_SVG = `
   <svg width="72" height="12">
@@ -135,7 +135,7 @@ export function Heatmap() {
             remoteOnline.value && remoteHttpUrl.value ? (
               <span class="remote-online"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}<a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{remoteUrl.value}</a></span>
             ) : remoteOnline.value === false ? (
-              <span class="remote-offline"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value} <button class="remote-offline-remove" onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }} disabled={remoteRemoving.value} onMouseEnter={(e: MouseEvent) => { tooltipText.value = 'Remote is offline \u2014 click to disconnect'; tooltipVisible.value = true; const el = document.getElementById('tooltip'); if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; } }} onMouseMove={(e: MouseEvent) => { const el = document.getElementById('tooltip'); if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; } }} onMouseLeave={() => { tooltipVisible.value = false; }}>&times;</button></span>
+              <span class="remote-offline"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value} <button class="remote-offline-remove" onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }} disabled={remoteRemoving.value} {...tooltipProps('Remote is offline \u2014 click to disconnect')}>&times;</button></span>
             ) : (
               <><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value}</>
             )
