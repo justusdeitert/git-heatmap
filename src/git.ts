@@ -331,6 +331,7 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
   writeFileSync(msgFile, newMessage);
   try {
     if (isHeadCommit(hash)) {
+      createBackupRef();
       // Preserve the original committer date
       const committerDate = git(`git log -1 --format="%cI" ${hash}`);
       execSync(`git commit --amend -F ${JSON.stringify(msgFile)}`, {
@@ -351,7 +352,6 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
         `GIT_SEQUENCE_EDITOR="${seqEditor}" GIT_EDITOR="${msgEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`,
         { encoding: 'utf8', stdio: 'pipe' },
       );
-      deleteBackupRef();
     } catch (err) {
       try {
         execSync('git rebase --abort', { stdio: 'pipe' });
@@ -385,6 +385,7 @@ export function rewriteCommit(
   const effectiveCommitterDate = opts.committerDate ?? opts.authorDate;
 
   if (isHeadCommit(hash)) {
+    createBackupRef();
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       GIT_COMMITTER_DATE: effectiveCommitterDate,
@@ -420,7 +421,6 @@ export function rewriteCommit(
 
     execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
     execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
-    deleteBackupRef();
   } catch (err) {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
@@ -546,7 +546,6 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
       stdio: 'pipe',
       env: { ...(process.env as Record<string, string>), GIT_SEQUENCE_EDITOR: `"${process.execPath}" "${scriptPath}"` },
     });
-    deleteBackupRef();
   } catch (err) {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
