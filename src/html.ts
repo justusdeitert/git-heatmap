@@ -11,6 +11,16 @@ const LABEL_W = 32;
 const HEADER_H = 20;
 const DAY_NAMES = ['Sun', '', 'Tue', '', 'Thu', '', 'Sat'];
 
+function weekday(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en', { weekday: 'long' });
+}
+
+function shortDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
+}
+
 // --- SVG builders ---
 
 function monthLabels(labels: MonthLabel[]): string {
@@ -39,7 +49,7 @@ function cells(weeks: Week[]): string {
       const x = LABEL_W + wi * (CELL + GAP);
       const y = HEADER_H + di * (CELL + GAP);
       const tip =
-        day.count === 0 ? `No commits on ${day.date}` : `${day.count} commit${day.count > 1 ? 's' : ''} on ${day.date}`;
+        day.count === 0 ? `No commits on ${shortDate(day.date)} (${weekday(day.date)})` : `${day.count} commit${day.count > 1 ? 's' : ''} on ${shortDate(day.date)} (${weekday(day.date)})`;
 
       rects.push(
         `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2" ry="2"` +
