@@ -416,7 +416,7 @@ export function rewriteCommit(
     if (opts.committerName) env.GIT_COMMITTER_NAME = opts.committerName;
     if (opts.committerEmail) env.GIT_COMMITTER_EMAIL = opts.committerEmail;
 
-    let cmd = `git commit --amend --no-edit --date=${JSON.stringify(opts.authorDate)}`;
+    let cmd = `git commit --amend --allow-empty --no-edit --date=${JSON.stringify(opts.authorDate)}`;
     if (opts.author) cmd += ` --author=${JSON.stringify(opts.author)}`;
 
     execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
@@ -517,7 +517,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   for (const hash of sorted) {
     const dates = dateMap.get(hash)!;
     execMap[hash.slice(0, 7)] =
-      `exec GIT_COMMITTER_DATE='${dates.committerDate}' git commit --amend --no-edit --date='${dates.authorDate}'`;
+      `exec GIT_COMMITTER_DATE='${dates.committerDate}' git commit --amend --allow-empty --no-edit --date='${dates.authorDate}'`;
   }
 
   // Write a temp Node script as GIT_SEQUENCE_EDITOR that inserts exec lines
