@@ -11,7 +11,17 @@
 
   &.commit-row-selectable {
     grid-template-columns: 20px auto 1fr auto;
+    align-items: center;
+    cursor: pointer;
+
+    .commit-checkbox { pointer-events: none; }
+    .commit-hash { pointer-events: none; }
   }
+}
+
+.commit-list--selecting {
+  user-select: none;
+  touch-action: none;
 }
 
 .commit-hash {
@@ -238,10 +248,36 @@
   align-items: center;
   gap: 8px;
   cursor: pointer;
+}
 
-  input[type="checkbox"] {
-    accent-color: var(--accent);
-    cursor: pointer;
+.commit-checkbox-box {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+  background: transparent;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  box-sizing: border-box;
+
+  &--checked {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  &--indeterminate {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
   }
 }
 
@@ -250,16 +286,10 @@
 .commit-checkbox {
   display: flex;
   align-items: center;
-
-  input[type="checkbox"] {
-    accent-color: var(--accent);
-    cursor: pointer;
-    margin: 0;
-  }
+  pointer-events: none;
 
   &.commit-checkbox-disabled {
     opacity: 0.3;
-    input { cursor: default; }
   }
 }
 

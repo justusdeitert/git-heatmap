@@ -11,11 +11,18 @@ import {
 } from '@/client/state';
 
 const shiftAmount = signal(1);
-const shiftUnit = signal<'minutes' | 'hours' | 'days'>('hours');
+const shiftUnit = signal<'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years'>('hours');
 const shiftDirection = signal<'later' | 'earlier'>('later');
 
 function getShiftMs(): number {
-  const multipliers = { minutes: 60_000, hours: 3_600_000, days: 86_400_000 };
+  const multipliers = {
+    minutes: 60_000,
+    hours: 3_600_000,
+    days: 86_400_000,
+    weeks: 604_800_000,
+    months: 2_592_000_000,
+    years: 31_536_000_000,
+  };
   const ms = shiftAmount.value * multipliers[shiftUnit.value];
   return shiftDirection.value === 'earlier' ? -ms : ms;
 }
@@ -67,12 +74,15 @@ export function BulkShiftBar() {
           <select
             class="bulk-shift-select"
             value={shiftUnit.value}
-            onChange={(e) => { shiftUnit.value = (e.target as HTMLSelectElement).value as 'minutes' | 'hours' | 'days'; }}
+            onChange={(e) => { shiftUnit.value = (e.target as HTMLSelectElement).value as 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years'; }}
             disabled={loading}
           >
-            <option value="minutes">min</option>
-            <option value="hours">hrs</option>
+            <option value="minutes">minutes</option>
+            <option value="hours">hours</option>
             <option value="days">days</option>
+            <option value="weeks">weeks</option>
+            <option value="months">months</option>
+            <option value="years">years</option>
           </select>
 
           <button

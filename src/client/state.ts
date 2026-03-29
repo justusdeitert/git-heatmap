@@ -400,10 +400,12 @@ export function toggleSelectionMode(): void {
   }
 }
 
-export function toggleCommitSelection(fullHash: string): void {
-  const next = new Set(selectedHashes.value);
-  if (next.has(fullHash)) next.delete(fullHash);
-  else next.add(fullHash);
+export function setCommitSelected(fullHash: string, selected: boolean): void {
+  const cur = selectedHashes.value;
+  if (selected === cur.has(fullHash)) return;
+  const next = new Set(cur);
+  if (selected) next.add(fullHash);
+  else next.delete(fullHash);
   selectedHashes.value = next;
 }
 

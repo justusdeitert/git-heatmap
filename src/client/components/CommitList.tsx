@@ -3,6 +3,7 @@ import CLOCK_ALERT_ICON from '@/client/icons/clock-alert.svg';
 import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitEntry, RefDecoration } from '@/client/state';
+import { useEffect, useRef } from 'preact/hooks';
 import {
   activeDate,
   clearDateFilter,
@@ -15,8 +16,8 @@ import {
   selectAllEditable,
   selectedHashes,
   selectionMode,
+  setCommitSelected,
   showCommitDetail,
-  toggleCommitSelection,
   toggleSelectionMode,
 } from '@/client/state';
 import { fullDateTime, tooltipProps } from '@/client/utils';
@@ -45,23 +46,22 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
   const isEditable = !commit.onRemote;
 
   return (
-    <div class={`commit-row${inSelectionMode ? ' commit-row-selectable' : ''}${isSelected ? ' commit-row-selected' : ''}`}>
+    <div
+      class={`commit-row${inSelectionMode ? ' commit-row-selectable' : ''}${isSelected ? ' commit-row-selected' : ''}`}
+      data-hash={inSelectionMode ? commit.fullHash : undefined}
+      data-editable={inSelectionMode && isEditable ? '' : undefined}
+    >
       {inSelectionMode && (
-        <label class={`commit-checkbox${!isEditable ? ' commit-checkbox-disabled' : ''}`}>
-          <input
-            type="checkbox"
-            checked={isSelected}
-            disabled={!isEditable}
-            onChange={() => toggleCommitSelection(commit.fullHash)}
-          />
-        </label>
+        <span class={`commit-checkbox${!isEditable ? ' commit-checkbox-disabled' : ''}`}>
+          <span class={`commit-checkbox-box${isSelected ? ' commit-checkbox-box--checked' : ''}`}>{isSelected ? '✓' : ''}</span>
+        </span>
       )}
       <CopyHash hash={commit.hash} full={commit.fullHash} />
-      <span class="commit-msg" onClick={openDetail}>
+      <span class="commit-msg" onClick={inSelectionMode ? undefined : openDetail}>
         {commit.message}
         <RefBadges refs={commit.refs} />
       </span>
-      <span class="commit-meta" onClick={openDetail}>
+      <span class="commit-meta" onClick={inSelectionMode ? undefined : openDetail}>
         {commit.author} &middot; {fullDateTime(commit.date)}
         {outOfOrder && (
           <span
@@ -132,11 +132,64 @@ function Pagination() {
   );
 }
 
+let dragActive = false;
+let dragPainting = true;
+
+function useDragSelect(listRef: ReturnType<typeof useRef<HTMLDivElement>>) {
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+
+    function rowFromPoint(x: number, y: number): { hash: string; editable: boolean } | null {
+      const target = document.elementFromPoint(x, y) as HTMLElement | null;
+      if (!target) return null;
+      const row = target.closest<HTMLElement>('[data-hash]');
+      if (!row) return null;
+      return { hash: row.dataset.hash!, editable: row.hasAttribute('data-editable') };
+    }
+
+    function onPointerDown(e: PointerEvent) {
+      if (e.button !== 0 || !selectionMode.value) return;
+      const hit = rowFromPoint(e.clientX, e.clientY);
+      if (!hit || !hit.editable) return;
+      dragActive = true;
+      dragPainting = !selectedHashes.value.has(hit.hash);
+      setCommitSelected(hit.hash, dragPainting);
+      e.preventDefault();
+    }
+
+    function onPointerMove(e: PointerEvent) {
+      if (!dragActive) return;
+      const hit = rowFromPoint(e.clientX, e.clientY);
+      if (!hit || !hit.editable) return;
+      setCommitSelected(hit.hash, dragPainting);
+    }
+
+    function onPointerUp() {
+      dragActive = false;
+    }
+
+    el.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
+
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointercancel', onPointerUp);
+    };
+  }, []);
+}
+
 export function CommitList() {
   const inSelectionMode = selectionMode.value;
   const selected = selectedHashes.value;
   const editableCount = commits.value.filter((c) => !c.onRemote).length;
   const allEditableSelected = editableCount > 0 && commits.value.filter((c) => !c.onRemote).every((c) => selected.has(c.fullHash));
+  const listRef = useRef<HTMLDivElement>(null);
+  useDragSelect(listRef);
 
   return (
     <div class="card">
@@ -157,13 +210,10 @@ export function CommitList() {
       </div>
       {inSelectionMode && editableCount > 0 && (
         <div class="select-bar">
-          <label class="select-all-label">
-            <input
-              type="checkbox"
-              checked={allEditableSelected}
-              ref={(el) => { if (el) el.indeterminate = !allEditableSelected && selected.size > 0; }}
-              onChange={() => allEditableSelected ? deselectAll() : selectAllEditable()}
-            />
+          <label class="select-all-label" onClick={(e) => { e.preventDefault(); allEditableSelected ? deselectAll() : selectAllEditable(); }}>
+            <span class={`commit-checkbox-box${allEditableSelected ? ' commit-checkbox-box--checked' : ''}${!allEditableSelected && selected.size > 0 ? ' commit-checkbox-box--indeterminate' : ''}`}>
+              {allEditableSelected ? '\u2713' : (!allEditableSelected && selected.size > 0 ? '\u2012' : '')}
+            </span>
             Select editable on this page ({editableCount})
           </label>
           {selected.size > 0 && (
@@ -171,7 +221,7 @@ export function CommitList() {
           )}
         </div>
       )}
-      <div class="commit-list" id="commitList">
+      <div class={`commit-list${inSelectionMode ? ' commit-list--selecting' : ''}`} id="commitList" ref={listRef}>
         {commits.value.length === 0 ? (
           <div class="commit-empty">No commits found</div>
         ) : (
