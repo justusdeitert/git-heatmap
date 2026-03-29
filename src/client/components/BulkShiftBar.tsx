@@ -93,12 +93,18 @@ export function BulkShiftBar() {
         </div>
 
         {isDirty && (
-          <div class="bulk-shift-dirty">
-            <span class="bulk-shift-dirty-icon">&#9888;</span>
-            Uncommitted changes — commit or stash before shifting
+          <div class="bulk-shift-notice bulk-shift-notice--warn">
+            <span class="bulk-shift-notice-icon">&#9888;</span>
+            <span class="bulk-shift-notice-text">Uncommitted changes — commit or stash before shifting</span>
           </div>
         )}
-        {error && !isDirty && <div class="bulk-shift-error">{error}</div>}
+        {error && !isDirty && (
+          <div class="bulk-shift-notice bulk-shift-notice--error">
+            <span class="bulk-shift-notice-icon">&#9888;</span>
+            <span class="bulk-shift-notice-text">{error}</span>
+            <button class="bulk-shift-notice-close" type="button" onClick={() => { bulkShiftError.value = null; }}>&times;</button>
+          </div>
+        )}
       </div>
     </div>
     </>

@@ -362,29 +362,50 @@
   &:disabled { opacity: 0.5; cursor: default; }
 }
 
-.bulk-shift-error {
-  width: 100%;
-  font-size: 12px;
-  color: #f85149;
-  margin-top: 2px;
-}
-
-.bulk-shift-dirty {
+.bulk-shift-notice {
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   font-size: 12px;
-  color: #d29922;
   margin-top: 6px;
   padding: 8px 12px;
-  background: rgba(210, 153, 34, 0.08);
-  border: 1px solid rgba(210, 153, 34, 0.3);
   border-radius: 8px;
   margin-bottom: 8px;
+
+  &--warn {
+    color: #d29922;
+    background: rgba(210, 153, 34, 0.08);
+    border: 1px solid rgba(210, 153, 34, 0.3);
+  }
+
+  &--error {
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.08);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+  }
 }
 
-.bulk-shift-dirty-icon {
+.bulk-shift-notice-icon {
   font-size: 14px;
   flex-shrink: 0;
+}
+
+.bulk-shift-notice-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.bulk-shift-notice-close {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.7;
+  flex-shrink: 0;
+
+  &:hover { opacity: 1; }
 }

@@ -303,6 +303,57 @@ export function getUncommittedFiles(): UncommittedFile[] {
   });
 }
 
+interface HiddenFile {
+  file: string;
+  type: 'skip-worktree' | 'assume-unchanged';
+}
+
+/** Temporarily clear skip-worktree and assume-unchanged flags that would block rebase. Returns a restore function. */
+function suspendHiddenFlags(): () => void {
+  let hidden: HiddenFile[];
+  try {
+    const output = execSync('git ls-files -v', { encoding: 'utf8' }).trim();
+    if (!output) return () => {};
+    hidden = output
+      .split('\n')
+      .filter((line) => line[0] === 'S' || (line[0] >= 'a' && line[0] <= 'z'))
+      .map((line) => ({
+        file: line.slice(2),
+        type: line[0] === 'S' ? 'skip-worktree' as const : 'assume-unchanged' as const,
+      }));
+  } catch {
+    return () => {};
+  }
+  if (hidden.length === 0) return () => {};
+
+  // Clear the flags
+  for (const h of hidden) {
+    const flag = h.type === 'skip-worktree' ? '--no-skip-worktree' : '--no-assume-unchanged';
+    try { execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' }); } catch { /* ignore */ }
+  }
+
+  // Stash the now-visible unstaged changes (only the hidden files)
+  let stashed = false;
+  const fileArgs = hidden.map((h) => `'${h.file.replace(/'/g, "'\\''")}'`).join(' ');
+  try {
+    const before = execSync('git stash list', { encoding: 'utf8' }).trim();
+    execSync(`git stash push -q -- ${fileArgs}`, { stdio: 'pipe' });
+    const after = execSync('git stash list', { encoding: 'utf8' }).trim();
+    stashed = before !== after;
+  } catch { /* nothing to stash — files may match HEAD */ }
+
+  return () => {
+    // Pop stash first, then restore flags
+    if (stashed) {
+      try { execSync('git stash pop -q', { stdio: 'pipe' }); } catch { /* ignore */ }
+    }
+    for (const h of hidden) {
+      const flag = h.type === 'skip-worktree' ? '--skip-worktree' : '--assume-unchanged';
+      try { execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' }); } catch { /* ignore */ }
+    }
+  };
+}
+
 function isCommitOnRemote(hash: string): boolean {
   try {
     const branches = execSync(`git branch -r --contains ${hash}`, {
@@ -344,6 +395,7 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
 
     const resolved = git(`git rev-parse ${hash}`);
     createBackupRef();
+    const restoreFlags = suspendHiddenFlags();
     // Automate interactive rebase: change 'pick <hash>' to 'reword <hash>'
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/reword ${resolved.slice(0, 7)}/'`;
     const msgEditor = `cp ${JSON.stringify(msgFile)}`;
@@ -360,6 +412,8 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
         /* ignore */
       }
       throw err;
+    } finally {
+      restoreFlags();
     }
   } finally {
     try {
@@ -402,6 +456,7 @@ export function rewriteCommit(
 
   const resolved = git(`git rev-parse ${hash}`);
   createBackupRef();
+  const restoreFlags = suspendHiddenFlags();
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
     execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${resolved}~1`, {
@@ -429,6 +484,8 @@ export function rewriteCommit(
       /* ignore */
     }
     throw err;
+  } finally {
+    restoreFlags();
   }
 }
 
@@ -540,6 +597,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   writeFileSync(scriptPath, editorScript);
 
   createBackupRef();
+  const restoreFlags = suspendHiddenFlags();
   try {
     execSync(`git rebase -i --committer-date-is-author-date ${isRootCommit ? '--root' : `${oldest}~1`}`, {
       encoding: 'utf8',
@@ -553,6 +611,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     } catch { /* ignore */ }
     throw err;
   } finally {
+    restoreFlags();
     try { unlinkSync(scriptPath); } catch { /* ignore */ }
   }
 }
