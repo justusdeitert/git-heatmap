@@ -2,34 +2,34 @@
 # yarn lockfile v1
 
 
-"@biomejs/biome@2.4.8":
-  version "2.4.8"
-  resolved "https://registry.npmjs.org/@biomejs/biome/-/biome-2.4.8.tgz"
-  integrity sha512-ponn0oKOky1oRXBV+rlSaUlixUxf1aZvWC19Z41zBfUOUesthrQqL3OtiAlSB1EjFjyWpn98Q64DHelhA6jNlA==
+"@biomejs/biome@2.4.10":
+  version "2.4.10"
+  resolved "https://registry.npmjs.org/@biomejs/biome/-/biome-2.4.10.tgz"
+  integrity sha512-xxA3AphFQ1geij4JTHXv4EeSTda1IFn22ye9LdyVPoJU19fNVl0uzfEuhsfQ4Yue/0FaLs2/ccVi4UDiE7R30w==
   optionalDependencies:
-    "@biomejs/cli-darwin-arm64" "2.4.8"
-    "@biomejs/cli-darwin-x64" "2.4.8"
-    "@biomejs/cli-linux-arm64" "2.4.8"
-    "@biomejs/cli-linux-arm64-musl" "2.4.8"
-    "@biomejs/cli-linux-x64" "2.4.8"
-    "@biomejs/cli-linux-x64-musl" "2.4.8"
-    "@biomejs/cli-win32-arm64" "2.4.8"
-    "@biomejs/cli-win32-x64" "2.4.8"
+    "@biomejs/cli-darwin-arm64" "2.4.10"
+    "@biomejs/cli-darwin-x64" "2.4.10"
+    "@biomejs/cli-linux-arm64" "2.4.10"
+    "@biomejs/cli-linux-arm64-musl" "2.4.10"
+    "@biomejs/cli-linux-x64" "2.4.10"
+    "@biomejs/cli-linux-x64-musl" "2.4.10"
+    "@biomejs/cli-win32-arm64" "2.4.10"
+    "@biomejs/cli-win32-x64" "2.4.10"
 
-"@biomejs/cli-darwin-arm64@2.4.8":
-  version "2.4.8"
-  resolved "https://registry.npmjs.org/@biomejs/cli-darwin-arm64/-/cli-darwin-arm64-2.4.8.tgz"
-  integrity sha512-ARx0tECE8I7S2C2yjnWYLNbBdDoPdq3oyNLhMglmuctThwUsuzFWRKrHmIGwIRWKz0Mat9DuzLEDp52hGnrxGQ==
+"@biomejs/cli-darwin-arm64@2.4.10":
+  version "2.4.10"
+  resolved "https://registry.npmjs.org/@biomejs/cli-darwin-arm64/-/cli-darwin-arm64-2.4.10.tgz"
+  integrity sha512-vuzzI1cWqDVzOMIkYyHbKqp+AkQq4K7k+UCXWpkYcY/HDn1UxdsbsfgtVpa40shem8Kax4TLDLlx8kMAecgqiw==
 
 "@bufbuild/protobuf@^2.5.0":
   version "2.11.0"
   resolved "https://registry.npmjs.org/@bufbuild/protobuf/-/protobuf-2.11.0.tgz"
   integrity sha512-sBXGT13cpmPR5BMgHE6UEEfEaShh5Ror6rfN3yEK5si7QVrtZg8LEPQb0VVhiLRUslD2yLnXtnRzG035J/mZXQ==
 
-"@esbuild/darwin-arm64@0.27.4":
-  version "0.27.4"
-  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.27.4.tgz"
-  integrity sha512-b7xaGIwdJlht8ZFCvMkpDN6uiSmnxxK56N2GDTMYPr2/gzvfdQN8rTfBsvVKmIVY/X7EM+/hJKEIbbHs9oA4tQ==
+"@esbuild/darwin-arm64@0.27.5":
+  version "0.27.5"
+  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.27.5.tgz"
+  integrity sha512-I+Ya/MgC6rr8oRWGRDF3BXDfP8K1BVUggHqN6VI2lUZLdDi1IM1v2cy0e3lCPbP+pVcK3Tv8cgUhHse1kaNZZw==
 
 "@parcel/watcher-darwin-arm64@2.5.6":
   version "2.5.6"
@@ -65,10 +65,10 @@
   resolved "https://registry.npmjs.org/@preact/signals-core/-/signals-core-1.14.0.tgz"
   integrity sha512-AowtCcCU/33lFlh1zRFf/u+12rfrhtNakj7UpaGEsmMwUKpKWMVvcktOGcwBBNiB4lWrZWc01LhiyyzVklJyaQ==
 
-"@preact/signals@^2.8.2":
-  version "2.8.2"
-  resolved "https://registry.npmjs.org/@preact/signals/-/signals-2.8.2.tgz"
-  integrity sha512-gym5yoa64c+0w2kL7zRAAjY548qzWXbbuOfjsK9F1nWrEqooDwyWnih5SNdonjhQSp27zUqYh7UrxIRnkCyFCA==
+"@preact/signals@^2.9.0":
+  version "2.9.0"
+  resolved "https://registry.npmjs.org/@preact/signals/-/signals-2.9.0.tgz"
+  integrity sha512-hYrY0KyUqkDgOl1qba/JGn6y81pXnurn21PMaxfcMwdncdZ3M/oVdmpTvEnsGjh48dIwDVc7bjWHqIsngSjYug==
   dependencies:
     "@preact/signals-core" "^1.14.0"
 
@@ -104,37 +104,37 @@ esbuild-sass-plugin@^3.7.0:
     resolve "^1.22.11"
     sass "^1.97.3"
 
-esbuild@^0.27.4, esbuild@>=0.27.3, esbuild@~0.27.0:
-  version "0.27.4"
-  resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.27.4.tgz"
-  integrity sha512-Rq4vbHnYkK5fws5NF7MYTU68FPRE1ajX7heQ/8QXXWqNgqqJ/GkmmyxIzUnf2Sr/bakf8l54716CcMGHYhMrrQ==
+esbuild@^0.27.5, esbuild@>=0.27.3, esbuild@~0.27.0:
+  version "0.27.5"
+  resolved "https://registry.npmjs.org/esbuild/-/esbuild-0.27.5.tgz"
+  integrity sha512-zdQoHBjuDqKsvV5OPaWansOwfSQ0Js+Uj9J85TBvj3bFW1JjWTSULMRwdQAc8qMeIScbClxeMK0jlrtB9linhA==
   optionalDependencies:
-    "@esbuild/aix-ppc64" "0.27.4"
-    "@esbuild/android-arm" "0.27.4"
-    "@esbuild/android-arm64" "0.27.4"
-    "@esbuild/android-x64" "0.27.4"
-    "@esbuild/darwin-arm64" "0.27.4"
-    "@esbuild/darwin-x64" "0.27.4"
-    "@esbuild/freebsd-arm64" "0.27.4"
-    "@esbuild/freebsd-x64" "0.27.4"
-    "@esbuild/linux-arm" "0.27.4"
-    "@esbuild/linux-arm64" "0.27.4"
-    "@esbuild/linux-ia32" "0.27.4"
-    "@esbuild/linux-loong64" "0.27.4"
-    "@esbuild/linux-mips64el" "0.27.4"
-    "@esbuild/linux-ppc64" "0.27.4"
-    "@esbuild/linux-riscv64" "0.27.4"
-    "@esbuild/linux-s390x" "0.27.4"
-    "@esbuild/linux-x64" "0.27.4"
-    "@esbuild/netbsd-arm64" "0.27.4"
-    "@esbuild/netbsd-x64" "0.27.4"
-    "@esbuild/openbsd-arm64" "0.27.4"
-    "@esbuild/openbsd-x64" "0.27.4"
-    "@esbuild/openharmony-arm64" "0.27.4"
-    "@esbuild/sunos-x64" "0.27.4"
-    "@esbuild/win32-arm64" "0.27.4"
-    "@esbuild/win32-ia32" "0.27.4"
-    "@esbuild/win32-x64" "0.27.4"
+    "@esbuild/aix-ppc64" "0.27.5"
+    "@esbuild/android-arm" "0.27.5"
+    "@esbuild/android-arm64" "0.27.5"
+    "@esbuild/android-x64" "0.27.5"
+    "@esbuild/darwin-arm64" "0.27.5"
+    "@esbuild/darwin-x64" "0.27.5"
+    "@esbuild/freebsd-arm64" "0.27.5"
+    "@esbuild/freebsd-x64" "0.27.5"
+    "@esbuild/linux-arm" "0.27.5"
+    "@esbuild/linux-arm64" "0.27.5"
+    "@esbuild/linux-ia32" "0.27.5"
+    "@esbuild/linux-loong64" "0.27.5"
+    "@esbuild/linux-mips64el" "0.27.5"
+    "@esbuild/linux-ppc64" "0.27.5"
+    "@esbuild/linux-riscv64" "0.27.5"
+    "@esbuild/linux-s390x" "0.27.5"
+    "@esbuild/linux-x64" "0.27.5"
+    "@esbuild/netbsd-arm64" "0.27.5"
+    "@esbuild/netbsd-x64" "0.27.5"
+    "@esbuild/openbsd-arm64" "0.27.5"
+    "@esbuild/openbsd-x64" "0.27.5"
+    "@esbuild/openharmony-arm64" "0.27.5"
+    "@esbuild/sunos-x64" "0.27.5"
+    "@esbuild/win32-arm64" "0.27.5"
+    "@esbuild/win32-ia32" "0.27.5"
+    "@esbuild/win32-x64" "0.27.5"
 
 fsevents@~2.3.3:
   version "2.3.3"
@@ -200,9 +200,9 @@ path-parse@^1.0.7:
   integrity sha512-LDJzPVEEEPR+y48z93A0Ed0yXb8pAByGWo/k5YYdYgpY2/2EsOsksJrq7lOHxryrVOn1ejG6oAp8ahvOIQD8sw==
 
 picomatch@^4.0.3:
-  version "4.0.3"
-  resolved "https://registry.npmjs.org/picomatch/-/picomatch-4.0.3.tgz"
-  integrity sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==
+  version "4.0.4"
+  resolved "https://registry.npmjs.org/picomatch/-/picomatch-4.0.4.tgz"
+  integrity sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==
 
 preact@^10.29.0, "preact@>= 10.25.0 || >=11.0.0-0":
   version "10.29.0"
@@ -327,10 +327,10 @@ tsx@^4.21.0:
   optionalDependencies:
     fsevents "~2.3.3"
 
-typescript@^5.8.2:
-  version "5.9.3"
-  resolved "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz"
-  integrity sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==
+typescript@^6.0.2:
+  version "6.0.2"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-6.0.2.tgz"
+  integrity sha512-bGdAIrZ0wiGDo5l8c++HWtbaNCWTS4UTv7RaTH/ThVIgjkveJt83m74bBHMJkuCbslY8ixgLBVZJIOiQlQTjfQ==
 
 undici-types@~7.18.0:
   version "7.18.2"
