@@ -1,6 +1,6 @@
 {
   "name": "git-heatmap",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "description": "Interactive commit heatmap dashboard for any git repository",
   "repository": {
     "type": "git",
