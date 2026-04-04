@@ -532,7 +532,8 @@ function handleRemoteCheck(res: ServerResponse): void {
   };
   const reqObj = https.request(httpsUrl, { method: 'HEAD', timeout: 5000 }, (response) => {
     response.resume();
-    respond(response.statusCode !== undefined && response.statusCode < 400);
+    const code = response.statusCode ?? 0;
+    respond(code > 0 && code < 500);
   });
   reqObj.on('error', () => respond(false));
   reqObj.on('timeout', () => { reqObj.destroy(); respond(false); });
