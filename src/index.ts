@@ -3,7 +3,6 @@
 import { exec } from 'node:child_process';
 import { watch } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import https from 'node:https';
 import { join } from 'node:path';
 import { parseArgs } from '@/args';
 import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear, getMonthLabels } from '@/calendar';
@@ -518,26 +517,10 @@ function handleRemoteCheck(res: ServerResponse): void {
     return;
   }
   const httpsUrl = gitUrlToHttps(raw);
-  if (!httpsUrl) {
+  exec('git ls-remote --heads origin', { timeout: 10000 }, (err: Error | null) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ online: false, url: null }));
-    return;
-  }
-  let responded = false;
-  const respond = (online: boolean) => {
-    if (responded) return;
-    responded = true;
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ online, url: httpsUrl }));
-  };
-  const reqObj = https.request(httpsUrl, { method: 'HEAD', timeout: 5000 }, (response) => {
-    response.resume();
-    const code = response.statusCode ?? 0;
-    respond(code > 0 && code < 500);
+    res.end(JSON.stringify({ online: !err, url: httpsUrl }));
   });
-  reqObj.on('error', () => respond(false));
-  reqObj.on('timeout', () => { reqObj.destroy(); respond(false); });
-  reqObj.end();
 }
 
 function handleRebaseDismiss(res: ServerResponse): void {
