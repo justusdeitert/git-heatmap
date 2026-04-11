@@ -131,17 +131,7 @@ export function Heatmap() {
           <span dangerouslySetInnerHTML={{ __html: CLOCK_ICON }} /> First commit: {formatDate(firstCommit.value)}
         </div>
         <div class="meta-item">
-          {remoteUrl.value ? (
-            remoteOnline.value && remoteHttpUrl.value ? (
-              <span class="remote-online"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}<a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{remoteUrl.value}</a></span>
-            ) : remoteOnline.value === false ? (
-              <span class="remote-offline"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value} <button class="remote-offline-remove" onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }} disabled={remoteRemoving.value} {...tooltipProps('Remote is offline \u2014 click to disconnect')}>&times;</button></span>
-            ) : (
-              <><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}{remoteUrl.value}</>
-            )
-          ) : (
-            <span class="remote-no-remote"><span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />{' '}No remote</span>
-          )}
+          <RemoteStatus />
         </div>
         <div class="meta-item">
           <span dangerouslySetInnerHTML={{ __html: DOT_ICON }} /> Generated: {now}
@@ -149,6 +139,42 @@ export function Heatmap() {
       </div>
     </div>
   );
+}
+
+function RemoteStatus() {
+  const icon = <span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />;
+  const url = remoteUrl.value;
+
+  if (!url) {
+    return <span class="remote-no-remote">{icon}{' '}No remote</span>;
+  }
+
+  // Check still pending
+  if (remoteOnline.value === null) {
+    return <>{icon}{' '}{url}</>;
+  }
+
+  // Offline: show disconnect button
+  if (!remoteOnline.value) {
+    return (
+      <span class="remote-offline">
+        {icon}{' '}{url}{' '}
+        <button
+          class="remote-offline-remove"
+          onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }}
+          disabled={remoteRemoving.value}
+          {...tooltipProps('Remote is offline. Click to disconnect')}
+        >&times;</button>
+      </span>
+    );
+  }
+
+  // Online: link if we have an HTTPS URL, plain text otherwise
+  const label = remoteHttpUrl.value
+    ? <a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{url}</a>
+    : url;
+
+  return <span class="remote-online">{icon}{' '}{label}</span>;
 }
 
 function YearSelector() {
