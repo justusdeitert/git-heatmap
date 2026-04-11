@@ -213,7 +213,7 @@ export async function showCommitDetail(fullHash: string): Promise<void> {
   } catch (err) {
     modalData.value = null;
     const msg = err instanceof Error ? err.message : 'Unknown error';
-    modalError.value = `Could not load commit — ${msg}`;
+    modalError.value = `Could not load commit: ${msg}`;
   } finally {
     modalLoading.value = false;
   }
@@ -238,7 +238,7 @@ export async function showAuthorLeaderboard(): Promise<void> {
   } catch (err) {
     authorModalData.value = [];
     const msg = err instanceof Error ? err.message : 'Unknown error';
-    authorModalError.value = `Could not load contributors — ${msg}`;
+    authorModalError.value = `Could not load contributors: ${msg}`;
   } finally {
     authorModalLoading.value = false;
   }
@@ -465,7 +465,7 @@ export function initSSE(): void {
   });
   events.addEventListener('error', () => {
     if (++errorCount >= 3) {
-      networkError.value = 'Connection to server lost — live updates stopped';
+      networkError.value = 'Connection to server lost. Live updates stopped.';
       events.close();
     }
   });

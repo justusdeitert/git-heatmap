@@ -44,7 +44,7 @@ function positionTooltipLeftOfCursor(e: MouseEvent): void {
 export function Heatmap() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Event delegation on container — no per-cell listeners needed
+  // Event delegation on container (no per-cell listeners needed)
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;
@@ -91,7 +91,7 @@ export function Heatmap() {
     };
   }, []);
 
-  // Apply selection state separately — no handler teardown needed
+  // Apply selection state separately, no handler teardown needed
   useEffect(() => {
     const container = scrollRef.current;
     if (!container) return;

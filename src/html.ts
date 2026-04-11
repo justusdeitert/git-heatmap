@@ -104,7 +104,7 @@ export function generateHTML(data: InitialData): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="google" content="notranslate">
-  <title>${data.repoName} — Git Heatmap</title>
+  <title>${data.repoName} | Git Heatmap</title>
   ${FAVICON}
   <style>${CLIENT_CSS}</style>
 </head>

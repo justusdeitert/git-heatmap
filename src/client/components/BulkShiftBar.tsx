@@ -105,7 +105,7 @@ export function BulkShiftBar() {
         {isDirty && (
           <div class="bulk-shift-notice bulk-shift-notice--warn">
             <span class="bulk-shift-notice-icon">&#9888;</span>
-            <span class="bulk-shift-notice-text">Uncommitted changes — commit or stash before shifting</span>
+            <span class="bulk-shift-notice-text">Uncommitted changes. Commit or stash before shifting.</span>
           </div>
         )}
         {error && !isDirty && (

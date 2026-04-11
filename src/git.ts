@@ -340,7 +340,7 @@ function suspendHiddenFlags(): () => void {
     execSync(`git stash push -q -- ${fileArgs}`, { stdio: 'pipe' });
     const after = execSync('git stash list', { encoding: 'utf8' }).trim();
     stashed = before !== after;
-  } catch { /* nothing to stash — files may match HEAD */ }
+  } catch { /* nothing to stash, files may match HEAD */ }
 
   return () => {
     // Pop stash first, then restore flags
@@ -569,7 +569,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     return;
   }
 
-  // Build exec commands keyed by short hash — each amends dates inline during rebase
+  // Build exec commands keyed by short hash. Each amends dates inline during rebase.
   const execMap: Record<string, string> = {};
   for (const hash of sorted) {
     const dates = dateMap.get(hash)!;
@@ -578,7 +578,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   }
 
   // Write a temp Node script as GIT_SEQUENCE_EDITOR that inserts exec lines
-  // after each target pick — the rebase runs to completion in one pass
+  // after each target pick so the rebase runs to completion in one pass
   const editorScript = [
     'const fs = require("fs");',
     'const todoFile = process.argv[2];',

@@ -6,7 +6,7 @@ export function Header() {
     <header>
       <span dangerouslySetInnerHTML={{ __html: REPO_ICON }} />
       <h1>
-        {repoName} <span>— Git Heatmap</span>
+        {repoName} <span>| Git Heatmap</span>
       </h1>
       <span class="badge">{branch}</span>
     </header>
