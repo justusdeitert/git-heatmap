@@ -1,7 +1,7 @@
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { InitialData } from '@/client/state';
-import { closeAuthorModal, closeModal, initFromServerData, initSSE } from '@/client/state';
+import { cancelDayShiftConfirm, closeAuthorModal, closeModal, initFromServerData, initSSE } from '@/client/state';
 
 import '@/client/styles/variables.scss';
 import '@/client/styles/base.scss';
@@ -18,7 +18,7 @@ import { CommitModal } from '@/client/components/CommitModal';
 import { DirtyBanner } from '@/client/components/DirtyBanner';
 import { ErrorBanner } from '@/client/components/ErrorBanner';
 import { Footer, Header } from '@/client/components/Header';
-import { Heatmap, RemoteConfirmDialog } from '@/client/components/Heatmap';
+import { DayShiftConfirmDialog, Heatmap, RemoteConfirmDialog } from '@/client/components/Heatmap';
 import { RebaseBanner } from '@/client/components/RebaseBanner';
 import { ConfirmDialog, ReflogPanel } from '@/client/components/ReflogPanel';
 import { StatsCards } from '@/client/components/StatsCards';
@@ -33,7 +33,11 @@ declare global {
 function App() {
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { closeModal(); closeAuthorModal(); }
+      if (e.key === 'Escape') {
+        closeModal();
+        closeAuthorModal();
+        cancelDayShiftConfirm();
+      }
     };
     document.addEventListener('keydown', handleKeydown);
     return () => document.removeEventListener('keydown', handleKeydown);
@@ -58,6 +62,7 @@ function App() {
       <AuthorModal />
       <ConfirmDialog />
       <RemoteConfirmDialog />
+      <DayShiftConfirmDialog />
     </>
   );
 }

@@ -50,6 +50,12 @@ export interface DirtyFile {
   file: string;
 }
 
+export interface PendingDayShift {
+  sourceDate: string;
+  targetDate: string;
+  commitCount: number;
+}
+
 export interface InitialData {
   repoName: string;
   remoteUrl: string | null;
@@ -110,6 +116,9 @@ export const selectionMode = signal(false);
 export const selectedHashes = signal<Set<string>>(new Set());
 export const bulkShiftLoading = signal(false);
 export const bulkShiftError = signal<string | null>(null);
+export const dayShiftLoading = signal(false);
+export const dayShiftConfirmVisible = signal(false);
+export const pendingDayShift = signal<PendingDayShift | null>(null);
 
 // Rebase recovery
 export const rebaseInProgress = signal(false);
@@ -322,7 +331,9 @@ export async function checkRebaseStatus(): Promise<void> {
     const data: { inProgress: boolean; hasBackup: boolean } = await res.json();
     rebaseInProgress.value = data.inProgress;
     rebaseHasBackup.value = data.hasBackup;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function rebaseAbort(): Promise<void> {
@@ -444,6 +455,66 @@ export async function bulkShift(shiftMs: number): Promise<void> {
   } finally {
     bulkShiftLoading.value = false;
     reloadSuppressed.value = false;
+  }
+}
+
+export async function shiftDayCommits(sourceDate: string, targetDate: string): Promise<void> {
+  if (!sourceDate || !targetDate || sourceDate === targetDate || dayShiftLoading.value) return;
+
+  dayShiftLoading.value = true;
+  networkError.value = null;
+  reloadSuppressed.value = true;
+  try {
+    const res = await fetch('/api/commits/day-shift', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceDate, targetDate }),
+    });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error || 'Failed to move commits to the target day');
+    }
+
+    activeDate.value = targetDate;
+    selectionMode.value = false;
+    selectedHashes.value = new Set();
+    bulkShiftError.value = null;
+
+    await Promise.all([
+      fetchCommits(1),
+      fetchCalendar(activeYear.value ?? new Date().getFullYear()),
+      fetchStats(),
+      checkRebaseStatus(),
+    ]);
+  } catch (err) {
+    networkError.value = err instanceof Error ? err.message : 'Failed to move commits to the target day';
+  } finally {
+    dayShiftLoading.value = false;
+    reloadSuppressed.value = false;
+  }
+}
+
+export function requestDayShiftConfirm(sourceDate: string, targetDate: string, commitCount: number): void {
+  if (!sourceDate || !targetDate || sourceDate === targetDate || commitCount <= 0) return;
+
+  pendingDayShift.value = { sourceDate, targetDate, commitCount };
+  dayShiftConfirmVisible.value = true;
+}
+
+export function cancelDayShiftConfirm(): void {
+  dayShiftConfirmVisible.value = false;
+  pendingDayShift.value = null;
+}
+
+export async function confirmDayShift(): Promise<void> {
+  const pending = pendingDayShift.value;
+  if (!pending) return;
+
+  dayShiftConfirmVisible.value = false;
+  try {
+    await shiftDayCommits(pending.sourceDate, pending.targetDate);
+  } finally {
+    pendingDayShift.value = null;
   }
 }
 

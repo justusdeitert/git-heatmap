@@ -1,3 +1,4 @@
+import ERROR_SVG from '@/client/icons/error-circle.svg';
 import {
   authorModalData,
   authorModalError,
@@ -5,7 +6,6 @@ import {
   authorModalVisible,
   closeAuthorModal,
 } from '@/client/state';
-import ERROR_SVG from '@/client/icons/error-circle.svg';
 
 function AuthorBar({ ratio }: { ratio: number }) {
   return (
@@ -39,7 +39,9 @@ export function AuthorModal() {
     >
       <div class={`modal${error ? ' modal-has-error' : ''}`}>
         <div class="modal-top-bar">
-          <div class="modal-subject" style={{ marginBottom: 0 }}>Contributors</div>
+          <div class="modal-subject" style={{ marginBottom: 0 }}>
+            Contributors
+          </div>
           <button class="modal-close" onClick={() => closeAuthorModal()}>
             &times;
           </button>
@@ -52,9 +54,7 @@ export function AuthorModal() {
               {error}
             </div>
           )}
-          {!loading && !error && authors.length === 0 && visible && (
-            <div class="modal-empty">No authors found</div>
-          )}
+          {!loading && !error && authors.length === 0 && visible && <div class="modal-empty">No authors found</div>}
           {!loading && authors.length > 0 && (
             <div class="author-list">
               {authors.map((author, i) => (
@@ -64,9 +64,7 @@ export function AuthorModal() {
                   <AuthorBar ratio={author.commits / maxCommits} />
                   <span class="author-commits">
                     {author.commits.toLocaleString()}
-                    <span class="author-pct">
-                      ({Math.round((author.commits / totalCommits) * 100)}%)
-                    </span>
+                    <span class="author-pct">({Math.round((author.commits / totalCommits) * 100)}%)</span>
                   </span>
                 </div>
               ))}

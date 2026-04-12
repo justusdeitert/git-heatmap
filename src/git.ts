@@ -72,11 +72,15 @@ export interface AuthorStat {
 
 export function getAuthorStats(): AuthorStat[] {
   const out = git('git shortlog -sne --no-merges HEAD');
-  return out.split('\n').filter(Boolean).map((line) => {
-    const match = line.trim().match(/^(\d+)\t(.+?)(?:\s+<.+>)?$/);
-    if (!match) return null;
-    return { name: match[2], commits: parseInt(match[1], 10) };
-  }).filter((a): a is AuthorStat => a !== null);
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.trim().match(/^(\d+)\t(.+?)(?:\s+<.+>)?$/);
+      if (!match) return null;
+      return { name: match[2], commits: parseInt(match[1], 10) };
+    })
+    .filter((a): a is AuthorStat => a !== null);
 }
 
 export function getCurrentBranch(): string {
@@ -92,7 +96,10 @@ export function isRebaseInProgress(): boolean {
 
 export function getBackupRef(): string | null {
   try {
-    return execSync(`git rev-parse --verify ${BACKUP_REF}`, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'ignore'] }).trim();
+    return execSync(`git rev-parse --verify ${BACKUP_REF}`, {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return null;
   }
@@ -121,7 +128,11 @@ function createBackupRef(): void {
 }
 
 function deleteBackupRef(): void {
-  try { execSync(`git update-ref -d ${BACKUP_REF}`, { stdio: 'pipe' }); } catch { /* ignore */ }
+  try {
+    execSync(`git update-ref -d ${BACKUP_REF}`, { stdio: 'pipe' });
+  } catch {
+    /* ignore */
+  }
 }
 
 export function dismissBackup(): void {
@@ -196,13 +207,17 @@ function getRemoteNames(): string[] {
 function parseRefs(raw: string): RefDecoration[] {
   if (!raw) return [];
   const remotes = getRemoteNames();
-  return raw.split(',').map((s) => s.trim()).filter(Boolean).map((ref) => {
-    if (ref.startsWith('tag: ')) return { name: ref.slice(5), type: 'tag' as const };
-    if (ref.startsWith('HEAD -> ')) return { name: ref.slice(8), type: 'head' as const };
-    if (ref === 'HEAD') return { name: 'HEAD', type: 'head' as const };
-    if (remotes.some((r) => ref.startsWith(`${r}/`))) return { name: ref, type: 'remote' as const };
-    return { name: ref, type: 'branch' as const };
-  });
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((ref) => {
+      if (ref.startsWith('tag: ')) return { name: ref.slice(5), type: 'tag' as const };
+      if (ref.startsWith('HEAD -> ')) return { name: ref.slice(8), type: 'head' as const };
+      if (ref === 'HEAD') return { name: 'HEAD', type: 'head' as const };
+      if (remotes.some((r) => ref.startsWith(`${r}/`))) return { name: ref, type: 'remote' as const };
+      return { name: ref, type: 'branch' as const };
+    });
 }
 
 export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
@@ -216,17 +231,42 @@ export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, ...refParts] = line.split(sep);
+      const [
+        hash,
+        fullHash,
+        message,
+        author,
+        authorEmail,
+        date,
+        committer,
+        committerEmail,
+        committerDate,
+        ...refParts
+      ] = line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
       const refs = parseRefs(refParts.join(sep));
-      return { hash, fullHash, message, author, authorEmail, date, committer, committerEmail, committerDate, onRemote, refs };
+      return {
+        hash,
+        fullHash,
+        message,
+        author,
+        authorEmail,
+        date,
+        committer,
+        committerEmail,
+        committerDate,
+        onRemote,
+        refs,
+      };
     });
 }
 
 export function getCommitDetail(hash: string): CommitDetail | null {
   const sep = '---GD---';
   try {
-    const raw = git(`git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" ${hash}`);
+    const raw = git(
+      `git log -1 --format="%h${sep}%H${sep}%s${sep}%b${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" ${hash}`,
+    );
     if (!raw) return null;
     const parts = raw.split(sep);
     const stats = git(`git diff --stat ${hash}~1 ${hash} 2>/dev/null || git diff --stat --root ${hash}`);
@@ -270,12 +310,52 @@ export function getCommitsByDate(date: string): CommitEntry[] {
     .split('\n')
     .filter(Boolean)
     .map((line) => {
-      const [hash, fullHash, message, author, authorEmail, d, committer, committerEmail, committerDate, ...refParts] = line.split(sep);
+      const [hash, fullHash, message, author, authorEmail, d, committer, committerEmail, committerDate, ...refParts] =
+        line.split(sep);
       const onRemote = unpushed ? !unpushed.has(fullHash) : false;
       const refs = parseRefs(refParts.join(sep));
-      return { hash, fullHash, message, author, authorEmail, date: d, committer, committerEmail, committerDate, onRemote, refs };
+      return {
+        hash,
+        fullHash,
+        message,
+        author,
+        authorEmail,
+        date: d,
+        committer,
+        committerEmail,
+        committerDate,
+        onRemote,
+        refs,
+      };
     })
     .filter((c) => c.date.startsWith(date));
+}
+
+export function getMovableCommitDays(year?: number): Set<string> {
+  const unpushed = getUnpushedCommitSet();
+  const sep = '---GD---';
+  const raw = git(`git log --no-merges --format="%H${sep}%aI"`);
+  if (!raw) return new Set();
+
+  const dayMovable = new Map<string, boolean>();
+  const yearPrefix = year == null ? null : `${year}-`;
+
+  for (const line of raw.split('\n').filter(Boolean)) {
+    const [fullHash, authorDate] = line.split(sep);
+    const day = authorDate.slice(0, 10);
+    if (yearPrefix && !day.startsWith(yearPrefix)) continue;
+
+    const isLocalOnly = unpushed ? unpushed.has(fullHash) : true;
+    if (!dayMovable.has(day)) {
+      dayMovable.set(day, isLocalOnly);
+      continue;
+    }
+    if (!isLocalOnly) {
+      dayMovable.set(day, false);
+    }
+  }
+
+  return new Set([...dayMovable.entries()].filter(([, movable]) => movable).map(([day]) => day));
 }
 
 function isHeadCommit(hash: string): boolean {
@@ -319,7 +399,7 @@ function suspendHiddenFlags(): () => void {
       .filter((line) => line[0] === 'S' || (line[0] >= 'a' && line[0] <= 'z'))
       .map((line) => ({
         file: line.slice(2),
-        type: line[0] === 'S' ? 'skip-worktree' as const : 'assume-unchanged' as const,
+        type: line[0] === 'S' ? ('skip-worktree' as const) : ('assume-unchanged' as const),
       }));
   } catch {
     return () => {};
@@ -329,7 +409,11 @@ function suspendHiddenFlags(): () => void {
   // Clear the flags
   for (const h of hidden) {
     const flag = h.type === 'skip-worktree' ? '--no-skip-worktree' : '--no-assume-unchanged';
-    try { execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' }); } catch { /* ignore */ }
+    try {
+      execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' });
+    } catch {
+      /* ignore */
+    }
   }
 
   // Stash the now-visible unstaged changes (only the hidden files)
@@ -340,16 +424,26 @@ function suspendHiddenFlags(): () => void {
     execSync(`git stash push -q -- ${fileArgs}`, { stdio: 'pipe' });
     const after = execSync('git stash list', { encoding: 'utf8' }).trim();
     stashed = before !== after;
-  } catch { /* nothing to stash, files may match HEAD */ }
+  } catch {
+    /* nothing to stash, files may match HEAD */
+  }
 
   return () => {
     // Pop stash first, then restore flags
     if (stashed) {
-      try { execSync('git stash pop -q', { stdio: 'pipe' }); } catch { /* ignore */ }
+      try {
+        execSync('git stash pop -q', { stdio: 'pipe' });
+      } catch {
+        /* ignore */
+      }
     }
     for (const h of hidden) {
       const flag = h.type === 'skip-worktree' ? '--skip-worktree' : '--assume-unchanged';
-      try { execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' }); } catch { /* ignore */ }
+      try {
+        execSync(`git update-index ${flag} '${h.file.replace(/'/g, "'\\''")}'`, { stdio: 'pipe' });
+      } catch {
+        /* ignore */
+      }
     }
   };
 }
@@ -459,10 +553,13 @@ export function rewriteCommit(
   const restoreFlags = suspendHiddenFlags();
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
-    execSync(`GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${resolved}~1`, {
-      encoding: 'utf8',
-      stdio: 'pipe',
-    });
+    execSync(
+      `GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${resolved}~1`,
+      {
+        encoding: 'utf8',
+        stdio: 'pipe',
+      },
+    );
 
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
@@ -562,10 +659,11 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   // If all selected commits include HEAD, or it's a single HEAD commit
   if (sorted.length === 1 && sorted[0] === headHash) {
     const dates = dateMap.get(headHash)!;
-    execSync(
-      `git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`,
-      { encoding: 'utf8', stdio: 'pipe', env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate } },
-    );
+    execSync(`git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`, {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate },
+    });
     return;
   }
 
@@ -608,10 +706,16 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
       deleteBackupRef();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     throw err;
   } finally {
     restoreFlags();
-    try { unlinkSync(scriptPath); } catch { /* ignore */ }
+    try {
+      unlinkSync(scriptPath);
+    } catch {
+      /* ignore */
+    }
   }
 }

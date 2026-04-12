@@ -1,5 +1,5 @@
 import { signal } from '@preact/signals';
-import { useRef, useEffect } from 'preact/hooks';
+import { useEffect, useRef } from 'preact/hooks';
 import {
   bulkShift,
   bulkShiftError,
@@ -46,77 +46,93 @@ export function BulkShiftBar() {
     <>
       <div class="bulk-shift-spacer" ref={spacerRef} />
       <div class="bulk-shift-bar" ref={barRef}>
-      <div class="bulk-shift-inner">
-        <span class="bulk-shift-count">
-          {count} commit{count !== 1 ? 's' : ''} selected
-        </span>
+        <div class="bulk-shift-inner">
+          <span class="bulk-shift-count">
+            {count} commit{count !== 1 ? 's' : ''} selected
+          </span>
 
-        <div class="bulk-shift-controls">
-          <select
-            class="bulk-shift-select"
-            value={shiftDirection.value}
-            onChange={(e) => { shiftDirection.value = (e.target as HTMLSelectElement).value as 'later' | 'earlier'; }}
-            disabled={loading}
-          >
-            <option value="later">Later</option>
-            <option value="earlier">Earlier</option>
-          </select>
+          <div class="bulk-shift-controls">
+            <select
+              class="bulk-shift-select"
+              value={shiftDirection.value}
+              onChange={(e) => {
+                shiftDirection.value = (e.target as HTMLSelectElement).value as 'later' | 'earlier';
+              }}
+              disabled={loading}
+            >
+              <option value="later">Later</option>
+              <option value="earlier">Earlier</option>
+            </select>
 
-          <input
-            class="bulk-shift-input"
-            type="number"
-            min={1}
-            value={shiftAmount.value}
-            onInput={(e) => { shiftAmount.value = Math.max(1, Number.parseInt((e.target as HTMLInputElement).value, 10) || 1); }}
-            disabled={loading}
-          />
+            <input
+              class="bulk-shift-input"
+              type="number"
+              min={1}
+              value={shiftAmount.value}
+              onInput={(e) => {
+                shiftAmount.value = Math.max(1, Number.parseInt((e.target as HTMLInputElement).value, 10) || 1);
+              }}
+              disabled={loading}
+            />
 
-          <select
-            class="bulk-shift-select"
-            value={shiftUnit.value}
-            onChange={(e) => { shiftUnit.value = (e.target as HTMLSelectElement).value as 'minutes' | 'hours' | 'days' | 'weeks' | 'months' | 'years'; }}
-            disabled={loading}
-          >
-            <option value="minutes">minutes</option>
-            <option value="hours">hours</option>
-            <option value="days">days</option>
-            <option value="weeks">weeks</option>
-            <option value="months">months</option>
-            <option value="years">years</option>
-          </select>
+            <select
+              class="bulk-shift-select"
+              value={shiftUnit.value}
+              onChange={(e) => {
+                shiftUnit.value = (e.target as HTMLSelectElement).value as
+                  | 'minutes'
+                  | 'hours'
+                  | 'days'
+                  | 'weeks'
+                  | 'months'
+                  | 'years';
+              }}
+              disabled={loading}
+            >
+              <option value="minutes">minutes</option>
+              <option value="hours">hours</option>
+              <option value="days">days</option>
+              <option value="weeks">weeks</option>
+              <option value="months">months</option>
+              <option value="years">years</option>
+            </select>
 
-          <button
-            class="bulk-shift-apply"
-            disabled={count === 0 || loading || isDirty}
-            onClick={() => bulkShift(getShiftMs())}
-          >
-            {loading ? 'Shifting…' : 'Apply'}
-          </button>
+            <button
+              class="bulk-shift-apply"
+              disabled={count === 0 || loading || isDirty}
+              onClick={() => bulkShift(getShiftMs())}
+            >
+              {loading ? 'Shifting…' : 'Apply'}
+            </button>
 
-          <button
-            class="bulk-shift-cancel"
-            onClick={() => toggleSelectionMode()}
-            disabled={loading}
-          >
-            Cancel
-          </button>
+            <button class="bulk-shift-cancel" onClick={() => toggleSelectionMode()} disabled={loading}>
+              Cancel
+            </button>
+          </div>
+
+          {isDirty && (
+            <div class="bulk-shift-notice bulk-shift-notice--warn">
+              <span class="bulk-shift-notice-icon">&#9888;</span>
+              <span class="bulk-shift-notice-text">Uncommitted changes. Commit or stash before shifting.</span>
+            </div>
+          )}
+          {error && !isDirty && (
+            <div class="bulk-shift-notice bulk-shift-notice--error">
+              <span class="bulk-shift-notice-icon">&#9888;</span>
+              <span class="bulk-shift-notice-text">{error}</span>
+              <button
+                class="bulk-shift-notice-close"
+                type="button"
+                onClick={() => {
+                  bulkShiftError.value = null;
+                }}
+              >
+                &times;
+              </button>
+            </div>
+          )}
         </div>
-
-        {isDirty && (
-          <div class="bulk-shift-notice bulk-shift-notice--warn">
-            <span class="bulk-shift-notice-icon">&#9888;</span>
-            <span class="bulk-shift-notice-text">Uncommitted changes. Commit or stash before shifting.</span>
-          </div>
-        )}
-        {error && !isDirty && (
-          <div class="bulk-shift-notice bulk-shift-notice--error">
-            <span class="bulk-shift-notice-icon">&#9888;</span>
-            <span class="bulk-shift-notice-text">{error}</span>
-            <button class="bulk-shift-notice-close" type="button" onClick={() => { bulkShiftError.value = null; }}>&times;</button>
-          </div>
-        )}
       </div>
-    </div>
     </>
   );
 }

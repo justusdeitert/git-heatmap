@@ -38,7 +38,7 @@ function dayLabels(): string {
     .join('\n      ');
 }
 
-function cells(weeks: Week[]): string {
+function cells(weeks: Week[], movableDays: ReadonlySet<string>): string {
   const rects: string[] = [];
 
   for (let wi = 0; wi < weeks.length; wi++) {
@@ -48,12 +48,15 @@ function cells(weeks: Week[]): string {
 
       const x = LABEL_W + wi * (CELL + GAP);
       const y = HEADER_H + di * (CELL + GAP);
+      const movable = day.count > 0 && movableDays.has(day.date);
       const tip =
-        day.count === 0 ? `No commits on ${shortDate(day.date)} (${weekday(day.date)})` : `${day.count} commit${day.count > 1 ? 's' : ''} on ${shortDate(day.date)} (${weekday(day.date)})`;
+        day.count === 0
+          ? `No commits on ${shortDate(day.date)} (${weekday(day.date)})`
+          : `${day.count} commit${day.count > 1 ? 's' : ''} on ${shortDate(day.date)} (${weekday(day.date)})${movable ? '. Drag to move editable commits.' : '. Contains pushed commits or protected history.'}`;
 
       rects.push(
         `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="2" ry="2"` +
-          ` class="day level-${day.level}" data-tooltip="${tip}" data-date="${day.date}" data-count="${day.count}"/>`,
+          ` class="day level-${day.level}${day.count > 0 && !movable ? ' day-locked' : ''}" data-tooltip="${tip}" data-date="${day.date}" data-count="${day.count}" data-movable="${movable ? 'true' : 'false'}"/>`,
       );
     }
   }
@@ -63,13 +66,17 @@ function cells(weeks: Week[]): string {
 
 // --- Public API ---
 
-export function buildHeatmapSvg(weeks: Week[], labels: MonthLabel[]): string {
+export function buildHeatmapSvg(
+  weeks: Week[],
+  labels: MonthLabel[],
+  movableDays: ReadonlySet<string> = new Set(),
+): string {
   const svgWidth = LABEL_W + weeks.length * (CELL + GAP);
   const svgHeight = HEADER_H + 7 * (CELL + GAP);
   return `<svg width="${svgWidth}" height="${svgHeight}">
           ${monthLabels(labels)}
           ${dayLabels()}
-          ${cells(weeks)}
+          ${cells(weeks, movableDays)}
         </svg>`;
 }
 

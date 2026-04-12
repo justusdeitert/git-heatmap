@@ -6,16 +6,22 @@ import {
   activeDate,
   activeYear,
   availableYears,
+  cancelDayShiftConfirm,
   clearDateFilter,
+  confirmDayShift,
+  dayShiftConfirmVisible,
+  dayShiftLoading,
   filterByDate,
   firstCommit,
   heatmapSvg,
+  pendingDayShift,
   remoteConfirmVisible,
   remoteHttpUrl,
   remoteOnline,
   remoteRemoving,
   remoteUrl,
   removeRemoteOrigin,
+  requestDayShiftConfirm,
   selectYear,
   tooltipText,
   tooltipVisible,
@@ -49,14 +55,96 @@ export function Heatmap() {
     const container = scrollRef.current;
     if (!container) return;
 
+    const dragState: {
+      sourceDate: string | null;
+      targetDate: string | null;
+      sourceEl: HTMLElement | null;
+      targetEl: HTMLElement | null;
+      sourceLevel: string | null;
+      targetOriginalLevel: string | null;
+      sourceCount: number;
+      startX: number;
+      startY: number;
+      dragging: boolean;
+      suppressClick: boolean;
+    } = {
+      sourceDate: null,
+      targetDate: null,
+      sourceEl: null,
+      targetEl: null,
+      sourceLevel: null,
+      targetOriginalLevel: null,
+      sourceCount: 0,
+      startX: 0,
+      startY: 0,
+      dragging: false,
+      suppressClick: false,
+    };
+
+    const getLevelClass = (el: Element): string | null => {
+      for (const cls of Array.from(el.classList)) {
+        if (cls.startsWith('level-')) return cls;
+      }
+      return null;
+    };
+
+    const restoreTargetLevel = () => {
+      if (dragState.targetEl && dragState.targetOriginalLevel) {
+        const current = getLevelClass(dragState.targetEl);
+        if (current) dragState.targetEl.classList.remove(current);
+        dragState.targetEl.classList.add(dragState.targetOriginalLevel);
+      }
+      dragState.targetOriginalLevel = null;
+    };
+
+    const applySourceLevelToTarget = () => {
+      if (!dragState.targetEl || !dragState.sourceLevel) return;
+      const current = getLevelClass(dragState.targetEl);
+      dragState.targetOriginalLevel = current;
+      if (current) dragState.targetEl.classList.remove(current);
+      dragState.targetEl.classList.add(dragState.sourceLevel);
+    };
+
+    const getDayFromTarget = (target: EventTarget | null): HTMLElement | null =>
+      (target as HTMLElement | null)?.closest('.day') as HTMLElement | null;
+
+    const getDayFromPoint = (x: number, y: number): HTMLElement | null =>
+      document.elementFromPoint(x, y)?.closest('.day') as HTMLElement | null;
+
+    const clearDragStyles = () => {
+      restoreTargetLevel();
+      if (dragState.sourceEl && dragState.sourceLevel) {
+        const current = getLevelClass(dragState.sourceEl);
+        if (current) dragState.sourceEl.classList.remove(current);
+        dragState.sourceEl.classList.add(dragState.sourceLevel);
+      }
+      dragState.sourceEl?.classList.remove('day-drag-source');
+      dragState.targetEl?.classList.remove('day-drag-target');
+      container.classList.remove('heatmap-dragging');
+    };
+
+    const resetDragState = () => {
+      clearDragStyles();
+      dragState.sourceDate = null;
+      dragState.targetDate = null;
+      dragState.sourceEl = null;
+      dragState.targetEl = null;
+      dragState.sourceLevel = null;
+      dragState.targetOriginalLevel = null;
+      dragState.sourceCount = 0;
+      dragState.dragging = false;
+    };
+
     const onEnter = (e: Event) => {
-      const el = (e.target as HTMLElement).closest('.day') as HTMLElement | null;
+      const el = getDayFromTarget(e.target);
       if (!el) return;
+      if (dragState.dragging) return;
       tooltipText.value = el.dataset.tooltip ?? '';
       tooltipVisible.value = true;
     };
     const onMove = (e: Event) => {
-      if (!(e.target as HTMLElement).closest('.day')) return;
+      if (dragState.dragging) return;
+      if (!getDayFromTarget(e.target)) return;
       positionTooltipLeftOfCursor(e as MouseEvent);
     };
     const onLeave = (e: Event) => {
@@ -67,7 +155,12 @@ export function Heatmap() {
       tooltipVisible.value = false;
     };
     const onClick = (e: Event) => {
-      const el = (e.target as HTMLElement).closest('.day') as HTMLElement | null;
+      if (dragState.suppressClick) {
+        dragState.suppressClick = false;
+        return;
+      }
+
+      const el = getDayFromTarget(e.target);
       if (!el) return;
       const date = el.dataset.date;
       if (!date) return;
@@ -78,16 +171,93 @@ export function Heatmap() {
       }
     };
 
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0 || dayShiftLoading.value) return;
+
+      const el = getDayFromTarget(e.target);
+      if (!el) return;
+
+      const date = el.dataset.date;
+      const count = Number.parseInt(el.dataset.count ?? '0', 10);
+      const movable = el.dataset.movable === 'true';
+      if (!date || count <= 0 || !movable) return;
+
+      dragState.sourceDate = date;
+      dragState.targetDate = null;
+      dragState.sourceEl = el;
+      dragState.targetEl = null;
+      dragState.sourceLevel = getLevelClass(el);
+      dragState.targetOriginalLevel = null;
+      dragState.sourceCount = count;
+      dragState.startX = e.clientX;
+      dragState.startY = e.clientY;
+      dragState.dragging = false;
+      tooltipVisible.value = false;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragState.sourceDate || !dragState.sourceEl) return;
+
+      const movedEnough = Math.abs(e.clientX - dragState.startX) > 4 || Math.abs(e.clientY - dragState.startY) > 4;
+      if (!dragState.dragging) {
+        if (!movedEnough) return;
+        dragState.dragging = true;
+        dragState.suppressClick = true;
+        dragState.sourceEl.classList.add('day-drag-source');
+        const currentSourceLevel = getLevelClass(dragState.sourceEl);
+        if (currentSourceLevel) dragState.sourceEl.classList.remove(currentSourceLevel);
+        dragState.sourceEl.classList.add('level-0');
+        container.classList.add('heatmap-dragging');
+      }
+
+      tooltipVisible.value = false;
+
+      const hovered = getDayFromPoint(e.clientX, e.clientY);
+      const hoveredDate = hovered?.dataset.date ?? null;
+      const nextTarget = hoveredDate && hoveredDate !== dragState.sourceDate ? hovered : null;
+
+      if (dragState.targetEl !== nextTarget) {
+        restoreTargetLevel();
+        dragState.targetEl?.classList.remove('day-drag-target');
+        dragState.targetEl = nextTarget;
+        dragState.targetEl?.classList.add('day-drag-target');
+        applySourceLevelToTarget();
+      }
+      dragState.targetDate = dragState.targetEl?.dataset.date ?? null;
+    };
+
+    const onPointerUp = () => {
+      const sourceDate = dragState.sourceDate;
+      const targetDate = dragState.targetDate;
+      const sourceCount = dragState.sourceCount;
+      const shouldShift = dragState.dragging && !!sourceDate && !!targetDate && sourceDate !== targetDate;
+
+      resetDragState();
+
+      if (shouldShift) {
+        requestDayShiftConfirm(sourceDate!, targetDate!, sourceCount);
+      }
+    };
+
     container.addEventListener('mouseenter', onEnter, true);
     container.addEventListener('mousemove', onMove, true);
     container.addEventListener('mouseleave', onLeave, true);
     container.addEventListener('click', onClick);
+    container.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
+    document.addEventListener('pointercancel', onPointerUp);
 
     return () => {
+      resetDragState();
       container.removeEventListener('mouseenter', onEnter, true);
       container.removeEventListener('mousemove', onMove, true);
       container.removeEventListener('mouseleave', onLeave, true);
       container.removeEventListener('click', onClick);
+      container.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', onPointerUp);
+      document.removeEventListener('pointercancel', onPointerUp);
     };
   }, []);
 
@@ -126,6 +296,11 @@ export function Heatmap() {
         <span dangerouslySetInnerHTML={{ __html: LEGEND_SVG }} />
         <span class="legend-text">More</span>
       </div>
+      <div class="heatmap-hint">
+        {dayShiftLoading.value
+          ? 'Moving day commits...'
+          : 'Click a day to filter commits. Only days whose commits are still local can be dragged onto another day.'}
+      </div>
       <div class="meta">
         <div class="meta-item">
           <span dangerouslySetInnerHTML={{ __html: CLOCK_ICON }} /> First commit: {formatDate(firstCommit.value)}
@@ -146,35 +321,52 @@ function RemoteStatus() {
   const url = remoteUrl.value;
 
   if (!url) {
-    return <span class="remote-no-remote">{icon}{' '}No remote</span>;
+    return <span class="remote-no-remote">{icon} No remote</span>;
   }
 
   // Check still pending
   if (remoteOnline.value === null) {
-    return <>{icon}{' '}{url}</>;
+    return (
+      <>
+        {icon} {url}
+      </>
+    );
   }
 
   // Offline: show disconnect button
   if (!remoteOnline.value) {
     return (
       <span class="remote-offline">
-        {icon}{' '}{url}{' '}
+        {icon} {url}{' '}
         <button
           class="remote-offline-remove"
-          onClick={() => { tooltipVisible.value = false; remoteConfirmVisible.value = true; }}
+          onClick={() => {
+            tooltipVisible.value = false;
+            remoteConfirmVisible.value = true;
+          }}
           disabled={remoteRemoving.value}
           {...tooltipProps('Remote is offline. Click to disconnect')}
-        >&times;</button>
+        >
+          &times;
+        </button>
       </span>
     );
   }
 
   // Online: link if we have an HTTPS URL, plain text otherwise
-  const label = remoteHttpUrl.value
-    ? <a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">{url}</a>
-    : url;
+  const label = remoteHttpUrl.value ? (
+    <a href={remoteHttpUrl.value} target="_blank" rel="noopener noreferrer">
+      {url}
+    </a>
+  ) : (
+    url
+  );
 
-  return <span class="remote-online">{icon}{' '}{label}</span>;
+  return (
+    <span class="remote-online">
+      {icon} {label}
+    </span>
+  );
 }
 
 function YearSelector() {
@@ -222,17 +414,62 @@ export function RemoteConfirmDialog() {
   };
 
   return (
-    <div class={`modal-overlay${visible ? ' visible' : ''}`} onClick={(e: MouseEvent) => { if (e.target === e.currentTarget) handleClose(); }}>
+    <div
+      class={`modal-overlay${visible ? ' visible' : ''}`}
+      onClick={(e: MouseEvent) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
       <div class="confirm-modal">
         <div class="confirm-title">Remove remote origin</div>
         <div class="confirm-body">
-          This will unlink the remote <strong>{remoteUrl.value}</strong> from your local repository. The remote itself won't be affected.
+          This will unlink the remote <strong>{remoteUrl.value}</strong> from your local repository. The remote itself
+          won't be affected.
         </div>
         {error && <div class="confirm-error">{error}</div>}
         <div class="confirm-actions">
-          <button class="rename-cancel" onClick={handleClose}>Cancel</button>
+          <button class="rename-cancel" onClick={handleClose}>
+            Cancel
+          </button>
           <button class="confirm-delete" disabled={remoteRemoving.value} onClick={handleRemove}>
             {remoteRemoving.value ? 'Removing...' : 'Remove remote'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function DayShiftConfirmDialog() {
+  const visible = dayShiftConfirmVisible.value;
+  const pending = pendingDayShift.value;
+  const sourceLabel = pending ? formatDate(`${pending.sourceDate}T12:00:00`) : '';
+  const targetLabel = pending ? formatDate(`${pending.targetDate}T12:00:00`) : '';
+
+  return (
+    <div
+      class={`modal-overlay${visible ? ' visible' : ''}`}
+      onClick={(e: MouseEvent) => {
+        if (e.target === e.currentTarget) cancelDayShiftConfirm();
+      }}
+    >
+      <div class="confirm-modal">
+        <div class="confirm-title">Move Day Commits</div>
+        <div class="confirm-body">
+          {pending
+            ? `Move ${pending.commitCount} commit${pending.commitCount !== 1 ? 's' : ''} from ${sourceLabel} to ${targetLabel}? This rewrites local commit timestamps.`
+            : "Move this day's commits to the selected target day?"}
+        </div>
+        <div class="confirm-actions">
+          <button class="rename-cancel" onClick={() => cancelDayShiftConfirm()} disabled={dayShiftLoading.value}>
+            Cancel
+          </button>
+          <button
+            class="confirm-delete"
+            disabled={!pending || dayShiftLoading.value}
+            onClick={() => void confirmDayShift()}
+          >
+            {dayShiftLoading.value ? 'Moving...' : 'Move commits'}
           </button>
         </div>
       </div>

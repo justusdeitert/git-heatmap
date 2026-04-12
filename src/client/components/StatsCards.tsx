@@ -1,5 +1,5 @@
-import { authors, showAuthorLeaderboard, stats } from '@/client/state';
 import CHEVRON_ICON from '@/client/icons/chevron.svg';
+import { authors, showAuthorLeaderboard, stats } from '@/client/state';
 
 export function StatsCards() {
   const s = stats.value;
@@ -17,16 +17,10 @@ export function StatsCards() {
   return (
     <div class="stats">
       {items.map(([value, label, onClick]) => (
-        <div
-          class={`stat-card${onClick ? ' stat-card-clickable' : ''}`}
-          key={label}
-          onClick={onClick ?? undefined}
-        >
+        <div class={`stat-card${onClick ? ' stat-card-clickable' : ''}`} key={label} onClick={onClick ?? undefined}>
           <div class="stat-value">{value}</div>
           <div class="stat-label">{label}</div>
-          {onClick && (
-            <span class="stat-card-indicator" dangerouslySetInnerHTML={{ __html: CHEVRON_ICON }} />
-          )}
+          {onClick && <span class="stat-card-indicator" dangerouslySetInnerHTML={{ __html: CHEVRON_ICON }} />}
         </div>
       ))}
     </div>

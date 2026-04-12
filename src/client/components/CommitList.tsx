@@ -1,9 +1,9 @@
+import { useEffect, useRef } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
 import CLOCK_ALERT_ICON from '@/client/icons/clock-alert.svg';
 import GIT_COMMIT_ICON from '@/client/icons/git-commit.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitEntry, RefDecoration } from '@/client/state';
-import { useEffect, useRef } from 'preact/hooks';
 import {
   activeDate,
   clearDateFilter,
@@ -37,7 +37,8 @@ function RefBadges({ refs }: { refs: RefDecoration[] }) {
 }
 
 function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: boolean }) {
-  const dateMismatch = commit.date !== commit.committerDate ||
+  const dateMismatch =
+    commit.date !== commit.committerDate ||
     commit.author !== commit.committer ||
     commit.authorEmail !== commit.committerEmail;
   const openDetail = () => showCommitDetail(commit.fullHash);
@@ -53,7 +54,9 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
     >
       {inSelectionMode && (
         <span class={`commit-checkbox${!isEditable ? ' commit-checkbox-disabled' : ''}`}>
-          <span class={`commit-checkbox-box${isSelected ? ' commit-checkbox-box--checked' : ''}`}>{isSelected ? '✓' : ''}</span>
+          <span class={`commit-checkbox-box${isSelected ? ' commit-checkbox-box--checked' : ''}`}>
+            {isSelected ? '✓' : ''}
+          </span>
         </span>
       )}
       <CopyHash hash={commit.hash} full={commit.fullHash} />
@@ -66,23 +69,17 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
         {outOfOrder && (
           <span
             class="commit-time-warn"
-            {...tooltipProps('Timestamp doesn\'t follow chronological order')}
+            {...tooltipProps("Timestamp doesn't follow chronological order")}
             dangerouslySetInnerHTML={{ __html: CLOCK_ALERT_ICON }}
           />
         )}
         {dateMismatch && (
-          <span
-            class="commit-warn"
-            {...tooltipProps('Author and committer differ')}
-          >
+          <span class="commit-warn" {...tooltipProps('Author and committer differ')}>
             &#9888;
           </span>
         )}
         {!commit.onRemote && (
-          <span
-            class="commit-local"
-            {...tooltipProps('Not on upstream yet. This commit is still editable.')}
-          >
+          <span class="commit-local" {...tooltipProps('Not on upstream yet. This commit is still editable.')}>
             &#8682;
           </span>
         )}
@@ -187,7 +184,8 @@ export function CommitList() {
   const inSelectionMode = selectionMode.value;
   const selected = selectedHashes.value;
   const editableCount = commits.value.filter((c) => !c.onRemote).length;
-  const allEditableSelected = editableCount > 0 && commits.value.filter((c) => !c.onRemote).every((c) => selected.has(c.fullHash));
+  const allEditableSelected =
+    editableCount > 0 && commits.value.filter((c) => !c.onRemote).every((c) => selected.has(c.fullHash));
   const listRef = useRef<HTMLDivElement>(null);
   useDragSelect(listRef);
 
@@ -210,15 +208,21 @@ export function CommitList() {
       </div>
       {inSelectionMode && editableCount > 0 && (
         <div class="select-bar">
-          <label class="select-all-label" onClick={(e) => { e.preventDefault(); allEditableSelected ? deselectAll() : selectAllEditable(); }}>
-            <span class={`commit-checkbox-box${allEditableSelected ? ' commit-checkbox-box--checked' : ''}${!allEditableSelected && selected.size > 0 ? ' commit-checkbox-box--indeterminate' : ''}`}>
-              {allEditableSelected ? '\u2713' : (!allEditableSelected && selected.size > 0 ? '\u2012' : '')}
+          <label
+            class="select-all-label"
+            onClick={(e) => {
+              e.preventDefault();
+              allEditableSelected ? deselectAll() : selectAllEditable();
+            }}
+          >
+            <span
+              class={`commit-checkbox-box${allEditableSelected ? ' commit-checkbox-box--checked' : ''}${!allEditableSelected && selected.size > 0 ? ' commit-checkbox-box--indeterminate' : ''}`}
+            >
+              {allEditableSelected ? '\u2713' : !allEditableSelected && selected.size > 0 ? '\u2012' : ''}
             </span>
             Select editable on this page ({editableCount})
           </label>
-          {selected.size > 0 && (
-            <span class="select-count">{selected.size} selected</span>
-          )}
+          {selected.size > 0 && <span class="select-count">{selected.size} selected</span>}
         </div>
       )}
       <div class={`commit-list${inSelectionMode ? ' commit-list--selecting' : ''}`} id="commitList" ref={listRef}>
@@ -241,9 +245,7 @@ export function CommitList() {
               if (timestamps[i] < maxTs) flags[i] = 1;
               maxTs = Math.max(maxTs, timestamps[i]);
             }
-            return list.map((c, i) => (
-              <CommitRow key={c.fullHash} commit={c} outOfOrder={!!flags[i]} />
-            ));
+            return list.map((c, i) => <CommitRow key={c.fullHash} commit={c} outOfOrder={!!flags[i]} />);
           })()
         )}
       </div>

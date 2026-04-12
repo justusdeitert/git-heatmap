@@ -78,11 +78,22 @@ export function esc(s: string): string {
 export function tooltipProps(text: string) {
   const position = (e: MouseEvent) => {
     const el = document.getElementById('tooltip');
-    if (el) { tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12); tooltipY.value = e.clientY - 36; }
+    if (el) {
+      tooltipX.value = Math.max(8, e.clientX - el.offsetWidth - 12);
+      tooltipY.value = e.clientY - 36;
+    }
   };
   return {
-    onMouseEnter: (e: MouseEvent) => { tooltipText.value = text; tooltipVisible.value = true; position(e); },
-    onMouseMove: (e: MouseEvent) => { position(e); },
-    onMouseLeave: () => { tooltipVisible.value = false; },
+    onMouseEnter: (e: MouseEvent) => {
+      tooltipText.value = text;
+      tooltipVisible.value = true;
+      position(e);
+    },
+    onMouseMove: (e: MouseEvent) => {
+      position(e);
+    },
+    onMouseLeave: () => {
+      tooltipVisible.value = false;
+    },
   };
 }

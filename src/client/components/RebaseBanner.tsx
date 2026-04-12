@@ -1,5 +1,5 @@
-import ERROR_SVG from '@/client/icons/error-circle.svg';
 import CLOCK_SVG from '@/client/icons/clock.svg';
+import ERROR_SVG from '@/client/icons/error-circle.svg';
 import {
   rebaseAbort,
   rebaseDismissBackup,
@@ -30,12 +30,7 @@ export function RebaseBanner() {
         </span>
         <div class="rebase-banner-actions">
           {isError && (
-            <button
-              class="rebase-btn rebase-btn-abort"
-              type="button"
-              disabled={loading}
-              onClick={() => rebaseAbort()}
-            >
+            <button class="rebase-btn rebase-btn-abort" type="button" disabled={loading} onClick={() => rebaseAbort()}>
               {loading ? 'Aborting…' : 'Abort Rebase'}
             </button>
           )}
@@ -54,7 +49,10 @@ export function RebaseBanner() {
               class="rebase-btn rebase-btn-dismiss"
               type="button"
               disabled={loading}
-              onClick={() => { tooltipVisible.value = false; rebaseDismissBackup(); }}
+              onClick={() => {
+                tooltipVisible.value = false;
+                rebaseDismissBackup();
+              }}
               {...tooltipProps('Permanently deletes the backup')}
             >
               Dismiss

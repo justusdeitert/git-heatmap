@@ -1,13 +1,22 @@
 .heatmap-scroll {
   overflow-x: auto;
+  user-select: none;
+  -webkit-user-select: none;
 
   svg { display: block; }
+
+  &.heatmap-dragging {
+    cursor: grabbing;
+
+    .day { cursor: grabbing; }
+  }
 }
 
 .month-label,
 .day-label {
   font-size: 10px;
   fill: var(--text-muted);
+  pointer-events: none;
 }
 
 .day {
@@ -18,6 +27,27 @@
 
   &:hover { stroke: var(--text-muted); stroke-width: 2; }
   &-selected { stroke: var(--accent); stroke-width: 2; }
+  &-drag-source {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 1 1;
+    opacity: 0.7;
+  }
+
+  &-drag-target {
+    stroke: var(--accent);
+    stroke-width: 3;
+  }
+
+  &.day-locked {
+    opacity: 0.72;
+  }
+}
+
+.heatmap-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 
 @for $i from 0 through 4 {

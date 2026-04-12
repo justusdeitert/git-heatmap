@@ -22,14 +22,15 @@ import {
   getCurrentBranch,
   getFirstCommitDate,
   getGitDir,
+  getMovableCommitDays,
   getRecentCommits,
   getReflogTraces,
   getRemoteUrl,
-  removeRemote,
   getRepoName,
   getUncommittedFiles,
   isInsideRepo,
   isRebaseInProgress,
+  removeRemote,
   restoreFromBackup,
   rewriteCommit,
   rewriteCommitMessage,
@@ -102,10 +103,11 @@ function getInitialData() {
   const yearMap = filterCommitMapByYear(commitMap, defaultYear);
   const weeks = buildCalendarWeeks(yearMap, defaultYear);
   const monthLabels = getMonthLabels(weeks);
+  const movableDays = getMovableCommitDays(defaultYear);
   const stats = computeStats(commitMap, dates.length);
   const dirtyFiles = getUncommittedFiles();
   const traces = getReflogTraces();
-  const heatmapSvg = buildHeatmapSvg(weeks, monthLabels);
+  const heatmapSvg = buildHeatmapSvg(weeks, monthLabels, movableDays);
 
   return { repoName, remoteUrl, branch, stats, authors, firstCommit, availableYears, heatmapSvg, dirtyFiles, traces };
 }
@@ -213,6 +215,7 @@ async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse,
       committerDate?: string;
       author?: string;
       committer?: string;
+      preserveTimestamps?: boolean;
     }>(req);
     let authorDate: string;
     let committerDate: string | undefined;
@@ -266,7 +269,14 @@ async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse,
       }
     }
 
-    rewriteCommit(hash, { authorDate, committerDate, author: authorStr, committerName, committerEmail, preserveTimestamps: body.preserveTimestamps !== false });
+    rewriteCommit(hash, {
+      authorDate,
+      committerDate,
+      author: authorStr,
+      committerName,
+      committerEmail,
+      preserveTimestamps: body.preserveTimestamps !== false,
+    });
     const detail = getCommitDetail(hash);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(detail ?? { ok: true }));
@@ -312,6 +322,64 @@ async function handleBulkShift(req: IncomingMessage, res: ServerResponse): Promi
     bulkShiftCommits(body.hashes, body.shiftMs);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, shifted: body.hashes.length }));
+  } catch (err) {
+    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: (err as Error).message }));
+  }
+}
+
+async function handleDayShift(req: IncomingMessage, res: ServerResponse): Promise<void> {
+  try {
+    const body = await parseRequestBody<{ sourceDate?: string; targetDate?: string }>(req);
+    const sourceDate = body.sourceDate?.trim();
+    const targetDate = body.targetDate?.trim();
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (!sourceDate || !targetDate || !datePattern.test(sourceDate) || !datePattern.test(targetDate)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'sourceDate and targetDate must use YYYY-MM-DD format' }));
+      return;
+    }
+    if (sourceDate === targetDate) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Source and target day must be different' }));
+      return;
+    }
+
+    const commits = getCommitsByDate(sourceDate);
+    if (commits.length === 0) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: `No commits found on ${sourceDate}` }));
+      return;
+    }
+
+    for (const commit of commits) {
+      const status = getCommitEditableStatus(commit.fullHash);
+      if (!status.editable) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            error: status.reason || `Commit ${commit.hash} on ${sourceDate} is not editable`,
+          }),
+        );
+        return;
+      }
+    }
+
+    const shiftMs = new Date(`${targetDate}T12:00:00`).getTime() - new Date(`${sourceDate}T12:00:00`).getTime();
+    if (shiftMs === 0) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Source and target day must be different' }));
+      return;
+    }
+
+    bulkShiftCommits(
+      commits.map((commit) => commit.fullHash),
+      shiftMs,
+    );
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true, shifted: commits.length }));
   } catch (err) {
     const status = (err as Error).message === 'Request body too large' ? 413 : 500;
     res.writeHead(status, { 'Content-Type': 'application/json' });
@@ -374,7 +442,8 @@ function handleCalendar(res: ServerResponse, searchParams: URLSearchParams): voi
     const yearMap = filterCommitMapByYear(fullMap, year);
     const calWeeks = buildCalendarWeeks(yearMap, year);
     const calLabels = getMonthLabels(calWeeks);
-    const svg = buildHeatmapSvg(calWeeks, calLabels);
+    const movableDays = getMovableCommitDays(year);
+    const svg = buildHeatmapSvg(calWeeks, calLabels, movableDays);
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify({ svg }));
   } catch (err) {
@@ -548,6 +617,7 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
   if (parsed.pathname === '/api/stats') return handleStats(res);
   if (parsed.pathname === '/api/calendar') return handleCalendar(res, parsed.searchParams);
   if (parsed.pathname === '/api/commits/bulk-shift' && req.method === 'PUT') return handleBulkShift(req, res);
+  if (parsed.pathname === '/api/commits/day-shift' && req.method === 'PUT') return handleDayShift(req, res);
   if (parsed.pathname === '/api/commits') return handleCommits(res, parsed.searchParams);
   if (parsed.pathname === '/api/authors') return handleAuthors(res);
   if (parsed.pathname === '/api/rebase' && req.method === 'GET') return handleRebaseStatus(res);
