@@ -21,14 +21,20 @@ header {
   padding-bottom: 16px;
   border-bottom: 1px solid var(--border);
 
-  svg { color: var(--text-muted); flex-shrink: 0; }
+  > span:first-child {
+    display: flex;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  > span > svg, > svg { width: 20px; height: 20px; color: var(--text-muted); flex-shrink: 0; }
 }
 
 h1 {
   font-size: 20px;
   font-weight: 600;
 
-  span { color: var(--text-muted); font-weight: 400; }
+  span { color: var(--text-muted); font-weight: 400; margin-left: 4px; }
 }
 
 footer {
