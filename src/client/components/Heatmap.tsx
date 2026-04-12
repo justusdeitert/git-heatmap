@@ -299,7 +299,7 @@ export function Heatmap() {
       <div class="heatmap-hint">
         {dayShiftLoading.value
           ? 'Moving day commits...'
-          : 'Click a day to filter commits. Only days whose commits are still local can be dragged onto another day.'}
+          : 'Click a day to filter commits, or drag a local day onto another to move its commits.'}
       </div>
       <div class="meta">
         <div class="meta-item">
