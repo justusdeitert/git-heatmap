@@ -5,7 +5,14 @@ import { watch } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { parseArgs } from '@/args';
-import { buildCalendarWeeks, buildCommitMap, computeStats, filterCommitMapByYear, getMonthLabels } from '@/calendar';
+import {
+  buildCalendarWeeks,
+  buildCommitMap,
+  computeStats,
+  filterCommitMapByYear,
+  getMonthLabels,
+  hasTimeWarnings,
+} from '@/calendar';
 import {
   abortRebase,
   bulkShiftCommits,
@@ -108,8 +115,21 @@ function getInitialData() {
   const dirtyFiles = getUncommittedFiles();
   const traces = getReflogTraces();
   const heatmapSvg = buildHeatmapSvg(weeks, monthLabels, movableDays);
+  const timeWarnings = hasTimeWarnings(dates);
 
-  return { repoName, remoteUrl, branch, stats, authors, firstCommit, availableYears, heatmapSvg, dirtyFiles, traces };
+  return {
+    repoName,
+    remoteUrl,
+    branch,
+    stats,
+    authors,
+    firstCommit,
+    availableYears,
+    heatmapSvg,
+    dirtyFiles,
+    traces,
+    timeWarnings,
+  };
 }
 
 function buildDashboard(): string {
@@ -415,8 +435,9 @@ function handleStats(res: ServerResponse): void {
     const statsData = computeStats(commitMap, dates.length);
     const dirtyFilesData = getUncommittedFiles();
     const tracesData = getReflogTraces();
+    const timeWarnings = hasTimeWarnings(dates);
     res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-    res.end(JSON.stringify({ stats: statsData, dirtyFiles: dirtyFilesData, traces: tracesData }));
+    res.end(JSON.stringify({ stats: statsData, dirtyFiles: dirtyFilesData, traces: tracesData, timeWarnings }));
   } catch (err) {
     res.writeHead(500, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: (err as Error).message }));

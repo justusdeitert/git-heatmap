@@ -100,6 +100,7 @@ interface InitialData {
   heatmapSvg: string;
   dirtyFiles: Array<{ status: string; file: string }>;
   traces: Array<{ hash: string; action: string; detail: string; date: string }>;
+  timeWarnings: boolean;
 }
 
 export function generateHTML(data: InitialData): string {

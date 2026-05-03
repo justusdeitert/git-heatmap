@@ -22,6 +22,7 @@ import { DayShiftConfirmDialog, Heatmap, RemoteConfirmDialog } from '@/client/co
 import { RebaseBanner } from '@/client/components/RebaseBanner';
 import { ConfirmDialog, ReflogPanel } from '@/client/components/ReflogPanel';
 import { StatsCards } from '@/client/components/StatsCards';
+import { TimeWarnBanner } from '@/client/components/TimeWarnBanner';
 import { Tooltip } from '@/client/components/Tooltip';
 
 declare global {
@@ -50,6 +51,7 @@ function App() {
         <RebaseBanner />
         <ErrorBanner />
         <DirtyBanner />
+        <TimeWarnBanner />
         <StatsCards />
         <Heatmap />
         <CommitList />

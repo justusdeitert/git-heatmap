@@ -68,6 +68,7 @@ export interface InitialData {
   dirtyFiles: DirtyFile[];
   traces: ReflogEntry[];
   version: string;
+  timeWarnings: boolean;
 }
 
 // --- Application State (Signals) ---
@@ -140,6 +141,35 @@ export const tooltipY = signal(0);
 // SSE reload suppression
 export const reloadSuppressed = signal(false);
 
+// Time-order warnings (server-computed, covers the whole repo)
+export const hasTimeWarnings = signal(false);
+
+// Per-commit flags for the current page (used by CommitList for row indicators).
+// A commit is flagged if its timestamp breaks the chronological order of the page,
+// either compared to commits listed below it or compared to commits listed above it.
+function findOutOfOrderTimes(times: number[]): Uint8Array {
+  const flags = new Uint8Array(times.length);
+
+  let oldestBelow = Infinity;
+  for (let i = 0; i < times.length; i++) {
+    if (times[i] > oldestBelow) flags[i] = 1;
+    else oldestBelow = times[i];
+  }
+
+  let newestAbove = -Infinity;
+  for (let i = times.length - 1; i >= 0; i--) {
+    if (times[i] < newestAbove) flags[i] = 1;
+    else newestAbove = times[i];
+  }
+
+  return flags;
+}
+
+export const commitTimeFlags = computed(() => {
+  const times = commits.value.map((c) => new Date(c.date).getTime());
+  return findOutOfOrderTimes(times);
+});
+
 // Derived
 export const availableYears = computed(() => initialData.value?.availableYears ?? []);
 export const repoName = computed(() => initialData.value?.repoName ?? '');
@@ -188,6 +218,7 @@ export async function fetchStats(): Promise<void> {
     stats.value = data.stats;
     dirtyFiles.value = data.dirtyFiles;
     traces.value = data.traces;
+    hasTimeWarnings.value = data.timeWarnings;
     networkError.value = null;
   } catch (err) {
     networkError.value = (err as Error).message || 'Failed to load stats';
@@ -550,6 +581,7 @@ export function initFromServerData(data: InitialData): void {
   heatmapSvg.value = data.heatmapSvg;
   dirtyFiles.value = data.dirtyFiles;
   traces.value = data.traces;
+  hasTimeWarnings.value = data.timeWarnings;
   activeYear.value =
     data.availableYears.length > 0 ? data.availableYears[data.availableYears.length - 1] : new Date().getFullYear();
   fetchCommits(1);

@@ -8,6 +8,7 @@ import {
   activeDate,
   clearDateFilter,
   commits,
+  commitTimeFlags,
   commitTotal,
   commitTotalPages,
   currentPage,
@@ -231,20 +232,7 @@ export function CommitList() {
         ) : (
           (() => {
             const list = commits.value;
-            const timestamps = list.map((c) => new Date(c.date).getTime());
-            const flags = new Uint8Array(list.length);
-            // Forward pass: flag commits newer than the smallest seen so far
-            let minTs = Infinity;
-            for (let i = 0; i < timestamps.length; i++) {
-              if (timestamps[i] > minTs) flags[i] = 1;
-              minTs = Math.min(minTs, timestamps[i]);
-            }
-            // Backward pass: flag commits older than the largest seen so far
-            let maxTs = -Infinity;
-            for (let i = timestamps.length - 1; i >= 0; i--) {
-              if (timestamps[i] < maxTs) flags[i] = 1;
-              maxTs = Math.max(maxTs, timestamps[i]);
-            }
+            const flags = commitTimeFlags.value;
             return list.map((c, i) => <CommitRow key={c.fullHash} commit={c} outOfOrder={!!flags[i]} />);
           })()
         )}

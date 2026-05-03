@@ -21,6 +21,17 @@ export function buildCommitMap(dates: string[]): CommitMap {
 }
 
 /**
+ * Returns true if any commit timestamps are out of chronological order.
+ * Expects ISO 8601 dates in git log order (newest first).
+ */
+export function hasTimeWarnings(dates: string[]): boolean {
+  for (let i = 1; i < dates.length; i++) {
+    if (dates[i] > dates[i - 1]) return true;
+  }
+  return false;
+}
+
+/**
  * Filters a commit map to only include entries for a given year.
  */
 export function filterCommitMapByYear(commitMap: CommitMap, year: number): CommitMap {
