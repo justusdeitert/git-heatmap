@@ -23,10 +23,12 @@ export function buildCommitMap(dates: string[]): CommitMap {
 /**
  * Returns true if any commit timestamps are out of chronological order.
  * Expects ISO 8601 dates in git log order (newest first).
+ * Parses to epoch ms because ISO strings with differing timezone offsets
+ * do not sort lexicographically the same as chronologically.
  */
 export function hasTimeWarnings(dates: string[]): boolean {
   for (let i = 1; i < dates.length; i++) {
-    if (dates[i] > dates[i - 1]) return true;
+    if (Date.parse(dates[i]) > Date.parse(dates[i - 1])) return true;
   }
   return false;
 }
