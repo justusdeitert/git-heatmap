@@ -1,4 +1,5 @@
 import { useState } from 'preact/hooks';
+import ALERT_SVG from '@/client/icons/alert.svg';
 import CHEVRON_SVG from '@/client/icons/chevron.svg';
 import { dirtyFiles } from '@/client/state';
 
@@ -11,7 +12,7 @@ export function DirtyBanner() {
   return (
     <div class={`dirty-banner${expanded ? ' expanded' : ''}`}>
       <button class="dirty-toggle" type="button" onClick={() => setExpanded(!expanded)}>
-        <span class="dirty-icon">&#9888;</span>
+        <span class="dirty-icon" dangerouslySetInnerHTML={{ __html: ALERT_SVG }} />
         <span class="dirty-text">
           You have {files.length} uncommitted change{files.length === 1 ? '' : 's'} in your working directory.
         </span>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
+import ALERT_SVG from '@/client/icons/alert.svg';
 import EDIT_SVG from '@/client/icons/edit.svg';
 import ERROR_SVG from '@/client/icons/error-circle.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
@@ -259,7 +260,7 @@ function ModalBody({ data }: { data: CommitDetailData }) {
     <>
       {!data.editable && data.reason && (
         <div class="modal-edit-notice">
-          <span class="dirty-icon">&#9888;</span>
+          <span class="dirty-icon" dangerouslySetInnerHTML={{ __html: ALERT_SVG }} />
           {data.reason}
         </div>
       )}
@@ -267,8 +268,8 @@ function ModalBody({ data }: { data: CommitDetailData }) {
         data.committer !== data.author ||
         data.committerEmail !== data.authorEmail) && (
         <div class="modal-edit-notice">
-          <span class="dirty-icon">&#9888;</span>Author and committer differ. This commit may have been amended or
-          rebased.
+          <span class="dirty-icon" dangerouslySetInnerHTML={{ __html: ALERT_SVG }} />
+          Author and committer differ. This commit may have been amended or rebased.
         </div>
       )}
 
