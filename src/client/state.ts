@@ -80,6 +80,9 @@ export const currentPage = signal(1);
 export const activeDate = signal<string | null>(null);
 export const activeYear = signal<number | null>(null);
 
+// When true, commits panel is scoped to the active year instead of the whole repo.
+export const yearFilterEnabled = signal(true);
+
 // Data
 export const commits = signal<CommitEntry[]>([]);
 export const commitTotal = signal(0);
@@ -185,6 +188,7 @@ export async function fetchCommits(page: number): Promise<void> {
   try {
     let url = `/api/commits?page=${page}`;
     if (activeDate.value) url += `&date=${activeDate.value}`;
+    else if (yearFilterEnabled.value && activeYear.value) url += `&year=${activeYear.value}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error('Failed to load commits');
     const data: CommitResponse = await res.json();
@@ -235,9 +239,15 @@ export function clearDateFilter(): void {
   fetchCommits(1);
 }
 
+export function toggleYearFilter(): void {
+  yearFilterEnabled.value = !yearFilterEnabled.value;
+  if (!activeDate.value) fetchCommits(1);
+}
+
 export function selectYear(year: number): void {
   activeYear.value = year;
   fetchCalendar(year);
+  if (yearFilterEnabled.value && !activeDate.value) fetchCommits(1);
 }
 
 export async function showCommitDetail(fullHash: string): Promise<void> {

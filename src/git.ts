@@ -177,7 +177,13 @@ export interface CommitDetail {
   refs: RefDecoration[];
 }
 
-export function getCommitCount(): number {
+export function getCommitCount(year?: number): number {
+  if (year != null) {
+    const after = `${year}-01-01`;
+    const before = `${year + 1}-01-01`;
+    const out = git(`git rev-list --no-merges --count --after="${after}" --before="${before}" HEAD`);
+    return parseInt(out, 10) || 0;
+  }
   const out = git('git rev-list --no-merges --count HEAD');
   return parseInt(out, 10) || 0;
 }
@@ -247,6 +253,49 @@ export function getRecentCommits(count = 20, skip = 0): CommitEntry[] {
   const sep = '---GD---';
   const raw = git(
     `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" --skip=${skip} -${count}`,
+  );
+  if (!raw) return [];
+  return raw
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [
+        hash,
+        fullHash,
+        message,
+        author,
+        authorEmail,
+        date,
+        committer,
+        committerEmail,
+        committerDate,
+        ...refParts
+      ] = line.split(sep);
+      const onRemote = unpushed ? !unpushed.has(fullHash) : false;
+      const refs = parseRefs(refParts.join(sep));
+      return {
+        hash,
+        fullHash,
+        message,
+        author,
+        authorEmail,
+        date,
+        committer,
+        committerEmail,
+        committerDate,
+        onRemote,
+        refs,
+      };
+    });
+}
+
+export function getRecentCommitsByYear(year: number, count = 20, skip = 0): CommitEntry[] {
+  const unpushed = getUnpushedCommitSet();
+  const sep = '---GD---';
+  const after = `${year}-01-01`;
+  const before = `${year + 1}-01-01`;
+  const raw = git(
+    `git log --no-merges --format="%h${sep}%H${sep}%s${sep}%an${sep}%ae${sep}%aI${sep}%cn${sep}%ce${sep}%cI${sep}%D" --after="${after}" --before="${before}" --skip=${skip} -${count}`,
   );
   if (!raw) return [];
   return raw

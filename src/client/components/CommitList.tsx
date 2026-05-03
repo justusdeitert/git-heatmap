@@ -6,6 +6,7 @@ import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitEntry, RefDecoration } from '@/client/state';
 import {
   activeDate,
+  activeYear,
   clearDateFilter,
   commits,
   commitTimeFlags,
@@ -20,6 +21,9 @@ import {
   setCommitSelected,
   showCommitDetail,
   toggleSelectionMode,
+  toggleYearFilter,
+  tooltipVisible,
+  yearFilterEnabled,
 } from '@/client/state';
 import { fullDateTime, tooltipProps } from '@/client/utils';
 
@@ -106,6 +110,44 @@ function DateFilter() {
           &times;
         </button>
       </span>
+    </span>
+  );
+}
+
+function YearFilter() {
+  const year = activeYear.value;
+  const enabled = yearFilterEnabled.value;
+  if (!year || activeDate.value) return <span id="yearFilter" />;
+
+  if (enabled) {
+    return (
+      <span id="yearFilter">
+        <span class="filter-badge">
+          {year}
+          <button
+            class="filter-clear"
+            onClick={() => {
+              tooltipVisible.value = false;
+              toggleYearFilter();
+            }}
+            {...tooltipProps('Unpin year (show all commits)')}
+          >
+            &times;
+          </button>
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <span id="yearFilter">
+      <button
+        class="filter-badge filter-badge-inactive"
+        onClick={() => toggleYearFilter()}
+        {...tooltipProps(`Show only commits from ${year}`)}
+      >
+        Pin to {year}
+      </button>
     </span>
   );
 }
@@ -198,6 +240,7 @@ export function CommitList() {
           ({commitTotal})
         </span>
         <DateFilter />
+        <YearFilter />
         {(editableCount > 0 || inSelectionMode) && (
           <button
             class={`select-toggle${inSelectionMode ? ' select-toggle-active' : ''}`}

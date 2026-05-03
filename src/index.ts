@@ -31,6 +31,7 @@ import {
   getGitDir,
   getMovableCommitDays,
   getRecentCommits,
+  getRecentCommitsByYear,
   getReflogTraces,
   getRemoteUrl,
   getRepoName,
@@ -477,12 +478,17 @@ function handleCommits(res: ServerResponse, searchParams: URLSearchParams): void
   try {
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
     const date = searchParams.get('date');
+    const yearParam = searchParams.get('year');
+    const year = yearParam ? parseInt(yearParam, 10) : undefined;
     let total: number;
     let commits: ReturnType<typeof getRecentCommits>;
     if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
       const all = getCommitsByDate(date);
       total = all.length;
       commits = all.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+    } else if (year != null && year > 0) {
+      total = getCommitCount(year);
+      commits = getRecentCommitsByYear(year, PER_PAGE, (page - 1) * PER_PAGE);
     } else {
       total = getCommitCount();
       commits = getRecentCommits(PER_PAGE, (page - 1) * PER_PAGE);
