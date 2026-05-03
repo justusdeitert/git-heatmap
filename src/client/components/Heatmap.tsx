@@ -164,6 +164,7 @@ export function Heatmap() {
       if (!el) return;
       const date = el.dataset.date;
       if (!date) return;
+      if (Number(el.dataset.count) === 0) return;
       if (activeDate.value === date) {
         clearDateFilter();
       } else {

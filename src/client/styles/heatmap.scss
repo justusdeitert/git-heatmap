@@ -25,6 +25,7 @@
   cursor: pointer;
   transition: stroke 0.1s;
 
+  &.level-0 { cursor: default; }
   &:hover { stroke: var(--text-muted); stroke-width: 2; }
   &-selected { stroke: var(--accent); stroke-width: 2; }
   &-drag-source {
