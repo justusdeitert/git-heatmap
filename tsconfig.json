@@ -14,7 +14,8 @@
     "sourceMap": false,
     "jsx": "react-jsx",
     "jsxImportSource": "preact",
-    "lib": ["ES2022", "DOM"]
+    "lib": ["ES2022", "DOM"],
+    "types": ["node"]
   },
   "include": ["src"]
 }

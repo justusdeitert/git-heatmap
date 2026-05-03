@@ -1,6 +1,6 @@
 import { exec, execSync } from 'node:child_process';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { CommitEntry, RefDecoration } from '@/types';
 
@@ -128,8 +128,15 @@ function createBackupRef(): void {
 }
 
 function getConfigIdentity(): { name: string; email: string } {
-  const name = git('git config user.name');
-  const email = git('git config user.email');
+  const opts = {
+    encoding: 'utf8' as const,
+    env: { ...process.env, HOME: process.env.HOME ?? homedir() },
+  };
+  const name = execSync('git config user.name', opts).trim();
+  const email = execSync('git config user.email', opts).trim();
+  if (!name || !email) {
+    throw new Error('git config user.name or user.email is not set');
+  }
   return { name, email };
 }
 
@@ -706,10 +713,16 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   // If all selected commits include HEAD, or it's a single HEAD commit
   if (sorted.length === 1 && sorted[0] === headHash) {
     const dates = dateMap.get(headHash)!;
+    const { name: configName, email: configEmail } = getConfigIdentity();
     execSync(`git commit --amend --no-edit --date=${JSON.stringify(dates.authorDate)}`, {
       encoding: 'utf8',
       stdio: 'pipe',
-      env: { ...(process.env as Record<string, string>), GIT_COMMITTER_DATE: dates.committerDate },
+      env: {
+        ...(process.env as Record<string, string>),
+        GIT_COMMITTER_DATE: dates.committerDate,
+        GIT_COMMITTER_NAME: configName,
+        GIT_COMMITTER_EMAIL: configEmail,
+      },
     });
     return;
   }
@@ -744,10 +757,16 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   createBackupRef();
   const restoreFlags = suspendHiddenFlags();
   try {
+    const { name: configName, email: configEmail } = getConfigIdentity();
     execSync(`git rebase -i --committer-date-is-author-date ${isRootCommit ? '--root' : `${oldest}~1`}`, {
       encoding: 'utf8',
       stdio: 'pipe',
-      env: { ...(process.env as Record<string, string>), GIT_SEQUENCE_EDITOR: `"${process.execPath}" "${scriptPath}"` },
+      env: {
+        ...(process.env as Record<string, string>),
+        GIT_SEQUENCE_EDITOR: `"${process.execPath}" "${scriptPath}"`,
+        GIT_COMMITTER_NAME: configName,
+        GIT_COMMITTER_EMAIL: configEmail,
+      },
     });
   } catch (err) {
     try {
