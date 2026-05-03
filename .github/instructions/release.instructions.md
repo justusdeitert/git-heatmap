@@ -10,6 +10,7 @@ When creating a new release, follow these steps exactly:
 
 - Use **patch** bump (e.g. 0.8.2 → 0.8.3) for bug fixes, small enhancements, dependency updates, and UI refinements to existing features.
 - Use **minor** bump (e.g. 0.8.3 → 0.9.0) for significant new features or capabilities.
+- Always propose the recommended version and wait for explicit user confirmation before bumping.
 
 ## 2. Bump version
 
