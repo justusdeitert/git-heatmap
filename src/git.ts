@@ -127,6 +127,21 @@ function createBackupRef(): void {
   execSync(`git update-ref ${BACKUP_REF} HEAD`, { stdio: 'pipe' });
 }
 
+function getConfigIdentity(): { name: string; email: string } {
+  const name = git('git config user.name');
+  const email = git('git config user.email');
+  return { name, email };
+}
+
+function isRootCommit(hash: string): boolean {
+  try {
+    execSync(`git rev-parse --verify ${hash}~1`, { stdio: 'ignore' });
+    return false;
+  } catch {
+    return true;
+  }
+}
+
 function deleteBackupRef(): void {
   try {
     execSync(`git update-ref -d ${BACKUP_REF}`, { stdio: 'pipe' });
@@ -477,12 +492,18 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
   try {
     if (isHeadCommit(hash)) {
       createBackupRef();
-      // Preserve the original committer date
+      // Preserve the original committer date and identity
       const committerDate = git(`git log -1 --format="%cI" ${hash}`);
+      const { name: configName, email: configEmail } = getConfigIdentity();
       execSync(`git commit --amend -F ${JSON.stringify(msgFile)}`, {
         encoding: 'utf8',
         stdio: 'pipe',
-        env: { ...process.env, GIT_COMMITTER_DATE: committerDate },
+        env: {
+          ...process.env,
+          GIT_COMMITTER_DATE: committerDate,
+          GIT_COMMITTER_NAME: configName,
+          GIT_COMMITTER_EMAIL: configEmail,
+        },
       });
       return;
     }
@@ -493,11 +514,20 @@ export function rewriteCommitMessage(hash: string, newMessage: string): void {
     // Automate interactive rebase: change 'pick <hash>' to 'reword <hash>'
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/reword ${resolved.slice(0, 7)}/'`;
     const msgEditor = `cp ${JSON.stringify(msgFile)}`;
+    const rebaseBase = isRootCommit(resolved) ? '--root' : `${resolved}~1`;
+    const { name: configName, email: configEmail } = getConfigIdentity();
     try {
-      execSync(
-        `GIT_SEQUENCE_EDITOR="${seqEditor}" GIT_EDITOR="${msgEditor}" git rebase -i --committer-date-is-author-date ${resolved}~1`,
-        { encoding: 'utf8', stdio: 'pipe' },
-      );
+      execSync(`git rebase -i --committer-date-is-author-date ${rebaseBase}`, {
+        encoding: 'utf8',
+        stdio: 'pipe',
+        env: {
+          ...(process.env as Record<string, string>),
+          GIT_SEQUENCE_EDITOR: seqEditor,
+          GIT_EDITOR: msgEditor,
+          GIT_COMMITTER_NAME: configName,
+          GIT_COMMITTER_EMAIL: configEmail,
+        },
+      });
     } catch (err) {
       try {
         execSync('git rebase --abort', { stdio: 'pipe' });
@@ -534,12 +564,13 @@ export function rewriteCommit(
 
   if (isHeadCommit(hash)) {
     createBackupRef();
+    const { name: configName, email: configEmail } = getConfigIdentity();
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       GIT_COMMITTER_DATE: effectiveCommitterDate,
+      GIT_COMMITTER_NAME: opts.committerName ?? configName,
+      GIT_COMMITTER_EMAIL: opts.committerEmail ?? configEmail,
     };
-    if (opts.committerName) env.GIT_COMMITTER_NAME = opts.committerName;
-    if (opts.committerEmail) env.GIT_COMMITTER_EMAIL = opts.committerEmail;
 
     let cmd = `git commit --amend --no-edit --date=${JSON.stringify(opts.authorDate)}`;
     if (opts.author) cmd += ` --author=${JSON.stringify(opts.author)}`;
@@ -553,26 +584,42 @@ export function rewriteCommit(
   const restoreFlags = suspendHiddenFlags();
   try {
     const seqEditor = `sed -i.bak 's/^pick ${resolved.slice(0, 7)}/edit ${resolved.slice(0, 7)}/'`;
+    const rebaseBase = isRootCommit(resolved) ? '--root' : `${resolved}~1`;
+    const { name: configName, email: configEmail } = getConfigIdentity();
     execSync(
-      `GIT_SEQUENCE_EDITOR="${seqEditor}" git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${resolved}~1`,
+      `git rebase -i${opts.preserveTimestamps !== false ? ' --committer-date-is-author-date' : ''} ${rebaseBase}`,
       {
         encoding: 'utf8',
         stdio: 'pipe',
+        env: {
+          ...(process.env as Record<string, string>),
+          GIT_SEQUENCE_EDITOR: seqEditor,
+          GIT_COMMITTER_NAME: configName,
+          GIT_COMMITTER_EMAIL: configEmail,
+        },
       },
     );
 
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       GIT_COMMITTER_DATE: effectiveCommitterDate,
+      GIT_COMMITTER_NAME: opts.committerName ?? configName,
+      GIT_COMMITTER_EMAIL: opts.committerEmail ?? configEmail,
     };
-    if (opts.committerName) env.GIT_COMMITTER_NAME = opts.committerName;
-    if (opts.committerEmail) env.GIT_COMMITTER_EMAIL = opts.committerEmail;
 
     let cmd = `git commit --amend --allow-empty --no-edit --date=${JSON.stringify(opts.authorDate)}`;
     if (opts.author) cmd += ` --author=${JSON.stringify(opts.author)}`;
 
     execSync(cmd, { encoding: 'utf8', stdio: 'pipe', env });
-    execSync('git rebase --continue', { encoding: 'utf8', stdio: 'pipe' });
+    execSync('git rebase --continue', {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      env: {
+        ...(process.env as Record<string, string>),
+        GIT_COMMITTER_NAME: configName,
+        GIT_COMMITTER_EMAIL: configEmail,
+      },
+    });
   } catch (err) {
     try {
       execSync('git rebase --abort', { stdio: 'pipe' });
