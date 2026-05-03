@@ -50,6 +50,7 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
   const inSelectionMode = selectionMode.value;
   const isSelected = selectedHashes.value.has(commit.fullHash);
   const isEditable = !commit.onRemote;
+  const showYear = !yearFilterEnabled.value && !activeDate.value;
 
   return (
     <div
@@ -70,7 +71,7 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
         <RefBadges refs={commit.refs} />
       </span>
       <span class="commit-meta" onClick={inSelectionMode ? undefined : openDetail}>
-        {commit.author} &middot; {fullDateTime(commit.date)}
+        {commit.author} &middot; {fullDateTime(commit.date, showYear)}
         {outOfOrder && (
           <span
             class="commit-time-warn"

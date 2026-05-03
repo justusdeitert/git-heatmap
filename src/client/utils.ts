@@ -12,14 +12,19 @@ export function relTime(iso: string): string {
   return `${Math.floor(d / 30)}mo ago`;
 }
 
-export function fullDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('en', {
+export function fullDateTime(iso: string, withYear = false): string {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('en', {
     month: 'short',
     day: 'numeric',
+  });
+  const time = d.toLocaleTimeString('en', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
+  if (withYear) return `${date} ${d.getFullYear()}, ${time}`;
+  return `${date}, ${time}`;
 }
 
 export function formatDate(iso: string | null): string {
