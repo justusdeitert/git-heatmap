@@ -9,14 +9,14 @@ export function ReflogPanel() {
   return (
     <div class="card trace-card">
       <div class="card-title">
-        &#9888; History Traces <span class="trace-count">({entries.length})</span>
+        &#9888; Reflog <span class="trace-count">({entries.length})</span>
         <button
           class="trace-clear-btn"
           onClick={() => {
             confirmVisible.value = true;
           }}
         >
-          Clear traces
+          Clear reflog
         </button>
       </div>
       <div class="trace-list">
@@ -63,7 +63,7 @@ export function ConfirmDialog() {
       }}
     >
       <div class="confirm-modal">
-        <div class="confirm-title">Clear History Traces</div>
+        <div class="confirm-title">Clear Reflog</div>
         <div class="confirm-body">
           This will permanently clear the git reflog and run garbage collection. This action cannot be undone.
         </div>
@@ -73,7 +73,7 @@ export function ConfirmDialog() {
             Cancel
           </button>
           <button class="confirm-delete" disabled={clearing} onClick={handleClear}>
-            {clearing ? 'Clearing...' : 'Clear traces'}
+            {clearing ? 'Clearing...' : 'Clear reflog'}
           </button>
         </div>
       </div>

@@ -454,7 +454,7 @@ export function DayShiftConfirmDialog() {
       }}
     >
       <div class="confirm-modal">
-        <div class="confirm-title">Move Day Commits</div>
+        <div class="confirm-title">Move day commits</div>
         <div class="confirm-body">
           {pending
             ? `Move ${pending.commitCount} commit${pending.commitCount !== 1 ? 's' : ''} from ${sourceLabel} to ${targetLabel}? This rewrites local commit timestamps.`
