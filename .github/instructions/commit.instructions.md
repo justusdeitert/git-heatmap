@@ -11,6 +11,8 @@ description: "Use before every commit. Review staged/unstaged changes for code q
 - Body: flat bullet list of changes, no category headers
 - Maximum 10 list items per commit
 - Use `->` for version transitions (e.g. `eslint 9->10`)
+- Do not add a `Co-authored-by: Copilot` trailer (or any other AI co-author trailer)
+- Author date must equal committer date. After amending, rebasing or cherry-picking, run `git rebase --committer-date-is-author-date @{u}` before pushing
 
 # Pre-Commit Review Checklist
 
