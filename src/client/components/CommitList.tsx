@@ -1,3 +1,4 @@
+import type { RefObject } from 'preact';
 import { useEffect, useRef } from 'preact/hooks';
 import { CopyHash } from '@/client/components/CopyHash';
 import CLOCK_ALERT_ICON from '@/client/icons/clock-alert.svg';
@@ -176,7 +177,7 @@ function Pagination() {
 let dragActive = false;
 let dragPainting = true;
 
-function useDragSelect(listRef: ReturnType<typeof useRef<HTMLDivElement>>) {
+function useDragSelect(listRef: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
