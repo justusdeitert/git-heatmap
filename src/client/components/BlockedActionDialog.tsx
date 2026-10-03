@@ -50,7 +50,9 @@ export function BlockedActionDialog() {
         {action?.conflict && (
           <div class="blocked-conflict">
             <ConflictRow label="Would be dated" commit={action.conflict.commit} warn />
-            <ConflictRow label="Before its predecessor" commit={action.conflict.predecessor} />
+            {action.conflict.predecessor && (
+              <ConflictRow label="Before its predecessor" commit={action.conflict.predecessor} />
+            )}
           </div>
         )}
         {action?.hint && <p class="blocked-hint">{action.hint}</p>}

@@ -2,7 +2,7 @@ import { exec, execSync } from 'node:child_process';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { findNewOrderViolation, type OrderViolation } from '@/calendar';
+import { type DatedCommit, findNewOrderViolation } from '@/calendar';
 import type { CommitEntry, RefDecoration } from '@/types';
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim();
@@ -618,7 +618,9 @@ export function rewriteCommit(
 ): void {
   if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   const effectiveCommitterDate = opts.committerDate ?? opts.authorDate;
-  assertChronologicalOrder(new Map([[git(`git rev-parse ${hash}`), opts.authorDate]]));
+  assertValidCommitDates(
+    new Map([[git(`git rev-parse ${hash}`), { authorDate: opts.authorDate, committerDate: effectiveCommitterDate }]]),
+  );
 
   if (isHeadCommit(hash)) {
     createBackupRef();
@@ -728,21 +730,35 @@ export async function clearReflog(): Promise<void> {
   await execAsync('git gc --prune=now');
 }
 
-export class ChronologyError extends Error {
-  override name = 'ChronologyError';
+export type BlockedEditCode = 'chronology' | 'future';
+
+/** Thrown when an edit is rejected before rewriting history, e.g. because it would break commit order. */
+export class BlockedEditError extends Error {
+  override name = 'BlockedEditError';
 
   constructor(
     message: string,
-    readonly violation: OrderViolation,
+    readonly code: BlockedEditCode,
+    readonly commit: DatedCommit,
+    readonly predecessor?: DatedCommit,
   ) {
     super(message);
   }
 }
 
-const formatIsoMinutes = (iso: string) => `${iso.slice(0, 16).replace('T', ' ')}${iso.endsWith('Z') ? ' UTC' : ''}`;
+interface NewCommitDates {
+  authorDate: string;
+  committerDate?: string;
+}
 
-/** Throws a ChronologyError if the new author dates would date a commit before one of its parents. */
-function assertChronologicalOrder(changes: ReadonlyMap<string, string>): void {
+const formatIsoMinutes = (iso: string) => `${iso.slice(0, 16).replace('T', ' ')}${iso.endsWith('Z') ? ' UTC' : ''}`;
+const describeCommit = (c: DatedCommit) => `"${c.subject}" (${c.hash.slice(0, 7)})`;
+
+/**
+ * Throws a BlockedEditError if any new date lies in the future,
+ * or if the new author dates would date a commit before one of its parents.
+ */
+function assertValidCommitDates(changes: ReadonlyMap<string, NewCommitDates>): void {
   const sep = '---GD---';
   const commits = git(`git log --format="%H${sep}%P${sep}%aI${sep}%s"`)
     .split('\n')
@@ -752,14 +768,28 @@ function assertChronologicalOrder(changes: ReadonlyMap<string, string>): void {
       return { hash, parents: parents.split(' ').filter(Boolean), date, subject: subject.join(sep) };
     });
 
-  const violation = findNewOrderViolation(commits, changes);
+  const now = Date.now();
+  for (const [hash, dates] of changes) {
+    const futureDate = [dates.authorDate, dates.committerDate].find((d) => d && Date.parse(d) > now);
+    if (!futureDate) continue;
+    const commit = { hash, subject: commits.find((c) => c.hash === hash)?.subject ?? '', date: futureDate };
+    throw new BlockedEditError(
+      `${describeCommit(commit)} would be dated ${formatIsoMinutes(futureDate)}, which is in the future.`,
+      'future',
+      commit,
+    );
+  }
+
+  const violation = findNewOrderViolation(commits, new Map([...changes].map(([hash, d]) => [hash, d.authorDate])));
   if (!violation) return;
 
   const { newer, older } = violation;
-  throw new ChronologyError(
-    `"${newer.subject}" (${newer.hash.slice(0, 7)}) would be dated ${formatIsoMinutes(newer.date)}, ` +
-      `which is before its predecessor "${older.subject}" (${older.hash.slice(0, 7)}, ${formatIsoMinutes(older.date)}).`,
-    violation,
+  throw new BlockedEditError(
+    `${describeCommit(newer)} would be dated ${formatIsoMinutes(newer.date)}, ` +
+      `which is before its predecessor ${describeCommit(older)} at ${formatIsoMinutes(older.date)}.`,
+    'chronology',
+    newer,
+    older,
   );
 }
 
@@ -786,7 +816,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     const newCommitter = new Date(new Date(t.committerDate).getTime() + shiftMs).toISOString();
     dateMap.set(t.fullHash, { authorDate: newAuthor, committerDate: newCommitter });
   }
-  assertChronologicalOrder(new Map([...dateMap].map(([hash, dates]) => [hash, dates.authorDate])));
+  assertValidCommitDates(dateMap);
 
   // Find the oldest commit in the selection (furthest from HEAD)
   const allHashes = git('git rev-list HEAD').split('\n').filter(Boolean);

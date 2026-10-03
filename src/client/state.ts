@@ -66,7 +66,7 @@ export interface BlockedAction {
   title: string;
   message: string;
   hint?: string;
-  conflict?: { commit: ConflictCommit; predecessor: ConflictCommit };
+  conflict?: { commit: ConflictCommit; predecessor?: ConflictCommit };
 }
 
 export interface InitialData {
@@ -202,17 +202,27 @@ export const version = computed(() => initialData.value?.version ?? '');
 
 export class BlockedActionError extends Error {}
 
+const BLOCKED_EDIT_TEXT: Record<string, { message: string; hint: string }> = {
+  chronology: {
+    message: 'This change would break the chronological order of your commits.',
+    hint: 'Pick a time between the neighbouring commits, or move them together.',
+  },
+  future: {
+    message: "Commits can't be dated in the future.",
+    hint: 'Pick a date and time that has already passed.',
+  },
+};
+
 async function throwResponseError(res: Response, fallback: string): Promise<never> {
   const data: { error?: string; code?: string; conflict?: BlockedAction['conflict'] } = await res
     .json()
     .catch(() => ({}));
-  if (data.code === 'chronology') {
+  const blocked = data.code ? BLOCKED_EDIT_TEXT[data.code] : undefined;
+  if (blocked) {
     blockedAction.value = {
       title: 'Action not possible',
-      message: data.conflict
-        ? 'This change would break the chronological order of your commits.'
-        : (data.error ?? fallback),
-      hint: 'Pick a time between the neighbouring commits, or move them together.',
+      message: blocked.message,
+      hint: blocked.hint,
       conflict: data.conflict,
     };
     throw new BlockedActionError(data.error);

@@ -9,14 +9,15 @@ import {
   buildCalendarWeeks,
   buildCommitMap,
   computeStats,
+  type DatedCommit,
   filterCommitMapByYear,
   getMonthLabels,
   hasTimeWarnings,
 } from '@/calendar';
 import {
   abortRebase,
+  BlockedEditError,
   bulkShiftCommits,
-  ChronologyError,
   clearReflog,
   dismissBackup,
   getAuthorCount,
@@ -212,15 +213,17 @@ function handleSSE(req: IncomingMessage, res: ServerResponse): void {
 
 function sendRequestError(res: ServerResponse, err: unknown): void {
   const message = (err as Error).message;
-  if (err instanceof ChronologyError) {
+  if (err instanceof BlockedEditError) {
+    const toCommit = (c: DatedCommit) => ({ hash: c.hash.slice(0, 7), subject: c.subject, date: c.date });
     res.writeHead(409, { 'Content-Type': 'application/json' });
-    const { newer, older } = err.violation;
-    const toCommit = (c: typeof newer) => ({ hash: c.hash.slice(0, 7), subject: c.subject, date: c.date });
     res.end(
       JSON.stringify({
         error: message,
-        code: 'chronology',
-        conflict: { commit: toCommit(newer), predecessor: toCommit(older) },
+        code: err.code,
+        conflict: {
+          commit: toCommit(err.commit),
+          predecessor: err.predecessor ? toCommit(err.predecessor) : undefined,
+        },
       }),
     );
     return;

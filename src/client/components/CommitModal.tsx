@@ -134,6 +134,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
   const committerIdentityRef = useRef<HTMLInputElement>(null);
   const authorDateRef = useRef<HTMLInputElement>(null);
   const committerDateRef = useRef<HTMLInputElement>(null);
+  const maxDateTime = toLocalDateTimeValue(new Date().toISOString());
 
   const handleSave = async () => {
     const newAuthorDate = authorDateRef.current?.value;
@@ -200,6 +201,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
           class="date-edit-input"
           ref={authorDateRef}
           step="1"
+          max={maxDateTime}
           value={toLocalDateTimeValue(data.authorDate)}
         />
       </div>
@@ -220,6 +222,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
             class="date-edit-input"
             ref={committerDateRef}
             step="1"
+            max={maxDateTime}
             value={toLocalDateTimeValue(data.committerDate)}
           />
         </div>
