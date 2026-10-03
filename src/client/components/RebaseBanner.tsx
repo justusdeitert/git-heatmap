@@ -39,8 +39,7 @@ export function RebaseBanner() {
               class="rebase-btn rebase-btn-restore"
               type="button"
               disabled={loading}
-              onClick={() => rebaseRestore()}
-            >
+              onClick={() => rebaseRestore()}>
               {loading ? 'Restoring…' : 'Restore'}
             </button>
           )}
@@ -53,8 +52,7 @@ export function RebaseBanner() {
                 tooltipVisible.value = false;
                 rebaseDismissBackup();
               }}
-              {...tooltipProps('Permanently deletes the backup')}
-            >
+              {...tooltipProps('Permanently deletes the backup')}>
               Dismiss
             </button>
           )}

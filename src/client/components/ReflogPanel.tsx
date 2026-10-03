@@ -14,8 +14,7 @@ export function ReflogPanel() {
           class="trace-clear-btn"
           onClick={() => {
             confirmVisible.value = true;
-          }}
-        >
+          }}>
           Clear reflog
         </button>
       </div>
@@ -60,8 +59,7 @@ export function ConfirmDialog() {
       class={`modal-overlay${visible ? ' visible' : ''}`}
       onClick={(e: MouseEvent) => {
         if (e.target === e.currentTarget) handleClose();
-      }}
-    >
+      }}>
       <div class="confirm-modal">
         <div class="confirm-title">Clear Reflog</div>
         <div class="confirm-body">

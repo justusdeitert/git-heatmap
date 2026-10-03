@@ -346,8 +346,7 @@ function RemoteStatus() {
             remoteConfirmVisible.value = true;
           }}
           disabled={remoteRemoving.value}
-          {...tooltipProps('Remote is offline. Click to disconnect')}
-        >
+          {...tooltipProps('Remote is offline. Click to disconnect')}>
           &times;
         </button>
       </span>
@@ -386,8 +385,7 @@ function YearSelector() {
           onClick={(e: Event) => {
             e.preventDefault();
             selectYear(y);
-          }}
-        >
+          }}>
           {y}
         </a>
       ))}
@@ -419,8 +417,7 @@ export function RemoteConfirmDialog() {
       class={`modal-overlay${visible ? ' visible' : ''}`}
       onClick={(e: MouseEvent) => {
         if (e.target === e.currentTarget) handleClose();
-      }}
-    >
+      }}>
       <div class="confirm-modal">
         <div class="confirm-title">Remove remote origin</div>
         <div class="confirm-body">
@@ -452,8 +449,7 @@ export function DayShiftConfirmDialog() {
       class={`modal-overlay${visible ? ' visible' : ''}`}
       onClick={(e: MouseEvent) => {
         if (e.target === e.currentTarget) cancelDayShiftConfirm();
-      }}
-    >
+      }}>
       <div class="confirm-modal">
         <div class="confirm-title">Move day commits</div>
         <div class="confirm-body">
@@ -468,8 +464,7 @@ export function DayShiftConfirmDialog() {
           <button
             class="confirm-delete"
             disabled={!pending || dayShiftLoading.value}
-            onClick={() => void confirmDayShift()}
-          >
+            onClick={() => void confirmDayShift()}>
             {dayShiftLoading.value ? 'Moving...' : 'Move commits'}
           </button>
         </div>

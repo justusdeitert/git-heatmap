@@ -12,12 +12,12 @@ const HEADER_H = 20;
 const DAY_NAMES = ['Sun', '', 'Tue', '', 'Thu', '', 'Sat'];
 
 function weekday(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(`${dateStr}T00:00:00`);
   return d.toLocaleDateString('en', { weekday: 'long' });
 }
 
 function shortDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(`${dateStr}T00:00:00`);
   return d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 }
 

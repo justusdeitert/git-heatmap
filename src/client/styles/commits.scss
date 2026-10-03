@@ -258,10 +258,15 @@ button.filter-badge {
   border-bottom: 1px solid var(--border);
 }
 
-.select-all-label {
+.select-all-toggle {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
   cursor: pointer;
 }
 

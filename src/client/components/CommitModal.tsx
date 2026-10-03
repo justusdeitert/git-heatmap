@@ -85,8 +85,7 @@ function RenameForm({ data }: { data: CommitDetailData }) {
               tooltipVisible.value = false;
               setRenaming(true);
             }}
-            {...tooltipProps('Rename commit message')}
-          >
+            {...tooltipProps('Rename commit message')}>
             <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
           </button>
         )}
@@ -103,8 +102,7 @@ function RenameForm({ data }: { data: CommitDetailData }) {
               onClick={() => {
                 setRenaming(false);
                 setError('');
-              }}
-            >
+              }}>
               Cancel
             </button>
             <button class="rename-save" disabled={saving} onClick={handleSave}>
@@ -232,8 +230,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
           onClick={() => {
             onClose();
             setError('');
-          }}
-        >
+          }}>
           Cancel
         </button>
         <button class="rename-save" disabled={saving} onClick={handleSave}>
@@ -286,8 +283,7 @@ function ModalBody({ data }: { data: CommitDetailData }) {
                   tooltipVisible.value = false;
                   setEditingDate(true);
                 }}
-                {...tooltipProps('Edit author & committer details')}
-              >
+                {...tooltipProps('Edit author & committer details')}>
                 <span dangerouslySetInnerHTML={{ __html: EDIT_SVG }} />
               </button>
             )}
@@ -361,8 +357,7 @@ export function CommitModal() {
       onClick={(e: MouseEvent) => {
         if (e.target === e.currentTarget && mouseDownOnOverlay) closeModal();
         mouseDownOnOverlay = false;
-      }}
-    >
+      }}>
       <div class={`modal${error ? ' modal-has-error' : ''}`}>
         <div class="modal-top-bar">
           {data && (

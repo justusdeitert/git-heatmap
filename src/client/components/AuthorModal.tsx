@@ -35,8 +35,7 @@ export function AuthorModal() {
       onClick={(e: MouseEvent) => {
         if (e.target === e.currentTarget && mouseDownOnOverlay) closeAuthorModal();
         mouseDownOnOverlay = false;
-      }}
-    >
+      }}>
       <div class={`modal${error ? ' modal-has-error' : ''}`}>
         <div class="modal-top-bar">
           <div class="modal-subject" style={{ marginBottom: 0 }}>

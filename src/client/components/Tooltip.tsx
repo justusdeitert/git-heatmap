@@ -5,8 +5,7 @@ export function Tooltip() {
     <div
       class={`tooltip${tooltipVisible.value ? ' visible' : ''}`}
       id="tooltip"
-      style={{ left: `${tooltipX.value}px`, top: `${tooltipY.value}px` }}
-    >
+      style={{ left: `${tooltipX.value}px`, top: `${tooltipY.value}px` }}>
       {tooltipText.value}
     </div>
   );

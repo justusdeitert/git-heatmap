@@ -58,8 +58,7 @@ export function BulkShiftBar() {
               onChange={(e) => {
                 shiftDirection.value = (e.target as HTMLSelectElement).value as 'later' | 'earlier';
               }}
-              disabled={loading}
-            >
+              disabled={loading}>
               <option value="later">Later</option>
               <option value="earlier">Earlier</option>
             </select>
@@ -87,8 +86,7 @@ export function BulkShiftBar() {
                   | 'months'
                   | 'years';
               }}
-              disabled={loading}
-            >
+              disabled={loading}>
               <option value="minutes">minutes</option>
               <option value="hours">hours</option>
               <option value="days">days</option>
@@ -100,8 +98,7 @@ export function BulkShiftBar() {
             <button
               class="bulk-shift-apply"
               disabled={count === 0 || loading || isDirty}
-              onClick={() => bulkShift(getShiftMs())}
-            >
+              onClick={() => bulkShift(getShiftMs())}>
               {loading ? 'Shifting…' : 'Apply'}
             </button>
 
@@ -125,8 +122,7 @@ export function BulkShiftBar() {
                 type="button"
                 onClick={() => {
                   bulkShiftError.value = null;
-                }}
-              >
+                }}>
                 &times;
               </button>
             </div>

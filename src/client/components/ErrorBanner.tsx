@@ -14,8 +14,7 @@ export function ErrorBanner() {
         type="button"
         onClick={() => {
           networkError.value = null;
-        }}
-      >
+        }}>
         ✕
       </button>
     </div>

@@ -57,8 +57,7 @@ function CommitRow({ commit, outOfOrder }: { commit: CommitEntry; outOfOrder?: b
     <div
       class={`commit-row${inSelectionMode ? ' commit-row-selectable' : ''}${isSelected ? ' commit-row-selected' : ''}`}
       data-hash={inSelectionMode ? commit.fullHash : undefined}
-      data-editable={inSelectionMode && isEditable ? '' : undefined}
-    >
+      data-editable={inSelectionMode && isEditable ? '' : undefined}>
       {inSelectionMode && (
         <span class={`commit-checkbox${!isEditable ? ' commit-checkbox-disabled' : ''}`}>
           <span class={`commit-checkbox-box${isSelected ? ' commit-checkbox-box--checked' : ''}`}>
@@ -132,8 +131,7 @@ function YearFilter() {
               tooltipVisible.value = false;
               toggleYearFilter();
             }}
-            {...tooltipProps('Unpin year (show all commits)')}
-          >
+            {...tooltipProps('Unpin year (show all commits)')}>
             &times;
           </button>
         </span>
@@ -146,8 +144,7 @@ function YearFilter() {
       <button
         class="filter-badge filter-badge-inactive"
         onClick={() => toggleYearFilter()}
-        {...tooltipProps(`Show only commits from ${year}`)}
-      >
+        {...tooltipProps(`Show only commits from ${year}`)}>
         Pin to {year}
       </button>
     </span>
@@ -193,7 +190,7 @@ function useDragSelect(listRef: RefObject<HTMLDivElement | null>) {
     function onPointerDown(e: PointerEvent) {
       if (e.button !== 0 || !selectionMode.value) return;
       const hit = rowFromPoint(e.clientX, e.clientY);
-      if (!hit || !hit.editable) return;
+      if (!hit?.editable) return;
       dragActive = true;
       dragPainting = !selectedHashes.value.has(hit.hash);
       setCommitSelected(hit.hash, dragPainting);
@@ -203,7 +200,7 @@ function useDragSelect(listRef: RefObject<HTMLDivElement | null>) {
     function onPointerMove(e: PointerEvent) {
       if (!dragActive) return;
       const hit = rowFromPoint(e.clientX, e.clientY);
-      if (!hit || !hit.editable) return;
+      if (!hit?.editable) return;
       setCommitSelected(hit.hash, dragPainting);
     }
 
@@ -246,28 +243,20 @@ export function CommitList() {
         {(editableCount > 0 || inSelectionMode) && (
           <button
             class={`select-toggle${inSelectionMode ? ' select-toggle-active' : ''}`}
-            onClick={() => toggleSelectionMode()}
-          >
+            onClick={() => toggleSelectionMode()}>
             {inSelectionMode ? 'Cancel' : 'Select'}
           </button>
         )}
       </div>
       {inSelectionMode && editableCount > 0 && (
         <div class="select-bar">
-          <label
-            class="select-all-label"
-            onClick={(e) => {
-              e.preventDefault();
-              allEditableSelected ? deselectAll() : selectAllEditable();
-            }}
-          >
+          <button class="select-all-toggle" onClick={() => (allEditableSelected ? deselectAll() : selectAllEditable())}>
             <span
-              class={`commit-checkbox-box${allEditableSelected ? ' commit-checkbox-box--checked' : ''}${!allEditableSelected && selected.size > 0 ? ' commit-checkbox-box--indeterminate' : ''}`}
-            >
+              class={`commit-checkbox-box${allEditableSelected ? ' commit-checkbox-box--checked' : ''}${!allEditableSelected && selected.size > 0 ? ' commit-checkbox-box--indeterminate' : ''}`}>
               {allEditableSelected ? '\u2713' : !allEditableSelected && selected.size > 0 ? '\u2012' : ''}
             </span>
             Select editable on this page ({editableCount})
-          </label>
+          </button>
           {selected.size > 0 && <span class="select-count">{selected.size} selected</span>}
         </div>
       )}
