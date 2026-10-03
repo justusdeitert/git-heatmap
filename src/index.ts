@@ -16,6 +16,7 @@ import {
 import {
   abortRebase,
   bulkShiftCommits,
+  ChronologyError,
   clearReflog,
   dismissBackup,
   getAuthorCount,
@@ -209,6 +210,25 @@ function handleSSE(req: IncomingMessage, res: ServerResponse): void {
   req.on('close', () => sseClients.delete(res));
 }
 
+function sendRequestError(res: ServerResponse, err: unknown): void {
+  const message = (err as Error).message;
+  if (err instanceof ChronologyError) {
+    res.writeHead(409, { 'Content-Type': 'application/json' });
+    const { newer, older } = err.violation;
+    const toCommit = (c: typeof newer) => ({ hash: c.hash.slice(0, 7), subject: c.subject, date: c.date });
+    res.end(
+      JSON.stringify({
+        error: message,
+        code: 'chronology',
+        conflict: { commit: toCommit(newer), predecessor: toCommit(older) },
+      }),
+    );
+    return;
+  }
+  res.writeHead(message === 'Request body too large' ? 413 : 500, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ error: message }));
+}
+
 async function handleCommitRename(req: IncomingMessage, res: ServerResponse, hash: string): Promise<void> {
   try {
     const { message } = await parseRequestBody<{ message: string }>(req);
@@ -222,9 +242,7 @@ async function handleCommitRename(req: IncomingMessage, res: ServerResponse, has
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(detail ?? { ok: true }));
   } catch (err) {
-    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: (err as Error).message }));
+    sendRequestError(res, err);
   }
 }
 
@@ -302,9 +320,7 @@ async function handleCommitDateUpdate(req: IncomingMessage, res: ServerResponse,
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(detail ?? { ok: true }));
   } catch (err) {
-    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: (err as Error).message }));
+    sendRequestError(res, err);
   }
 }
 
@@ -344,9 +360,7 @@ async function handleBulkShift(req: IncomingMessage, res: ServerResponse): Promi
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, shifted: body.hashes.length }));
   } catch (err) {
-    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: (err as Error).message }));
+    sendRequestError(res, err);
   }
 }
 
@@ -402,9 +416,7 @@ async function handleDayShift(req: IncomingMessage, res: ServerResponse): Promis
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ok: true, shifted: commits.length }));
   } catch (err) {
-    const status = (err as Error).message === 'Request body too large' ? 413 : 500;
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: (err as Error).message }));
+    sendRequestError(res, err);
   }
 }
 

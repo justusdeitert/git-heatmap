@@ -2,6 +2,7 @@ import { exec, execSync } from 'node:child_process';
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { findNewOrderViolation, type OrderViolation } from '@/calendar';
 import type { CommitEntry, RefDecoration } from '@/types';
 
 const git = (cmd: string): string => execSync(cmd, { encoding: 'utf8' }).trim();
@@ -617,6 +618,7 @@ export function rewriteCommit(
 ): void {
   if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   const effectiveCommitterDate = opts.committerDate ?? opts.authorDate;
+  assertChronologicalOrder(new Map([[git(`git rev-parse ${hash}`), opts.authorDate]]));
 
   if (isHeadCommit(hash)) {
     createBackupRef();
@@ -726,6 +728,41 @@ export async function clearReflog(): Promise<void> {
   await execAsync('git gc --prune=now');
 }
 
+export class ChronologyError extends Error {
+  override name = 'ChronologyError';
+
+  constructor(
+    message: string,
+    readonly violation: OrderViolation,
+  ) {
+    super(message);
+  }
+}
+
+const formatIsoMinutes = (iso: string) => `${iso.slice(0, 16).replace('T', ' ')}${iso.endsWith('Z') ? ' UTC' : ''}`;
+
+/** Throws a ChronologyError if the new author dates would date a commit before one of its parents. */
+function assertChronologicalOrder(changes: ReadonlyMap<string, string>): void {
+  const sep = '---GD---';
+  const commits = git(`git log --format="%H${sep}%P${sep}%aI${sep}%s"`)
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [hash, parents, date, ...subject] = line.split(sep);
+      return { hash, parents: parents.split(' ').filter(Boolean), date, subject: subject.join(sep) };
+    });
+
+  const violation = findNewOrderViolation(commits, changes);
+  if (!violation) return;
+
+  const { newer, older } = violation;
+  throw new ChronologyError(
+    `"${newer.subject}" (${newer.hash.slice(0, 7)}) would be dated ${formatIsoMinutes(newer.date)}, ` +
+      `which is before its predecessor "${older.subject}" (${older.hash.slice(0, 7)}, ${formatIsoMinutes(older.date)}).`,
+    violation,
+  );
+}
+
 export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
   if (hashes.length === 0) return;
   if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
@@ -749,6 +786,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     const newCommitter = new Date(new Date(t.committerDate).getTime() + shiftMs).toISOString();
     dateMap.set(t.fullHash, { authorDate: newAuthor, committerDate: newCommitter });
   }
+  assertChronologicalOrder(new Map([...dateMap].map(([hash, dates]) => [hash, dates.authorDate])));
 
   // Find the oldest commit in the selection (furthest from HEAD)
   const allHashes = git('git rev-list HEAD').split('\n').filter(Boolean);

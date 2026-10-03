@@ -33,6 +33,48 @@ export function hasTimeWarnings(dates: string[]): boolean {
   return false;
 }
 
+export interface DatedCommit {
+  hash: string;
+  subject: string;
+  date: string;
+}
+
+export interface GraphCommit extends DatedCommit {
+  parents: string[];
+}
+
+export interface OrderViolation {
+  newer: DatedCommit;
+  older: DatedCommit;
+}
+
+/**
+ * Returns the first parent/child pair that `changes` (hash -> new ISO date) would put out of
+ * chronological order (child dated before its parent), or null. Equal timestamps are allowed.
+ * Pairs that are already out of order are ignored, so existing problems never block an edit.
+ */
+export function findNewOrderViolation(
+  commits: GraphCommit[],
+  changes: ReadonlyMap<string, string>,
+): OrderViolation | null {
+  const byHash = new Map(commits.map((c) => [c.hash, c]));
+  for (const child of commits) {
+    for (const parentHash of child.parents) {
+      const parent = byHash.get(parentHash);
+      if (!parent) continue;
+      const childDate = changes.get(child.hash);
+      const parentDate = changes.get(parent.hash);
+      if (childDate === undefined && parentDate === undefined) continue;
+      if (Date.parse(child.date) < Date.parse(parent.date)) continue;
+
+      const newer = { hash: child.hash, subject: child.subject, date: childDate ?? child.date };
+      const older = { hash: parent.hash, subject: parent.subject, date: parentDate ?? parent.date };
+      if (Date.parse(newer.date) < Date.parse(older.date)) return { newer, older };
+    }
+  }
+  return null;
+}
+
 /**
  * Filters a commit map to only include entries for a given year.
  */

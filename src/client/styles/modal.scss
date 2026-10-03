@@ -361,6 +361,101 @@
   line-height: 1.5;
 }
 
+// Blocked action dialog
+.blocked-modal { max-width: 480px; }
+
+.blocked-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+
+  .confirm-title { margin-bottom: 0; }
+}
+
+.blocked-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #f47067;
+  background: rgba(244, 112, 103, 0.12);
+
+  svg { width: 16px; height: 16px; }
+}
+
+.blocked-message {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.blocked-conflict {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.blocked-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+
+  & + & { border-top: 1px solid var(--border); }
+}
+
+.blocked-row-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.blocked-row-commit {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.blocked-row-hash {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.blocked-row-subject {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.blocked-row-date {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+
+  &--warn { color: #f47067; font-weight: 600; }
+}
+
+.blocked-hint {
+  margin: 12px 0 18px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 .confirm-error {
   color: #f47067;
   font-size: 12px;

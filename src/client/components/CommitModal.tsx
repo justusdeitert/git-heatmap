@@ -6,6 +6,7 @@ import ERROR_SVG from '@/client/icons/error-circle.svg';
 import TAG_ICON from '@/client/icons/tag.svg';
 import type { CommitDetailData, RefDecoration } from '@/client/state';
 import {
+  BlockedActionError,
   closeModal,
   modalData,
   modalError,
@@ -164,7 +165,7 @@ function CommitEditForm({ data, onClose }: { data: CommitDetailData; onClose: ()
       }
       await updateCommit(data.fullHash, opts);
     } catch (err) {
-      setError((err as Error).message);
+      if (!(err instanceof BlockedActionError)) setError((err as Error).message);
       setSaving(false);
     }
   };

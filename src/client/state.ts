@@ -56,6 +56,19 @@ export interface PendingDayShift {
   commitCount: number;
 }
 
+export interface ConflictCommit {
+  hash: string;
+  subject: string;
+  date: string;
+}
+
+export interface BlockedAction {
+  title: string;
+  message: string;
+  hint?: string;
+  conflict?: { commit: ConflictCommit; predecessor: ConflictCommit };
+}
+
 export interface InitialData {
   repoName: string;
   remoteUrl: string | null;
@@ -124,6 +137,9 @@ export const dayShiftLoading = signal(false);
 export const dayShiftConfirmVisible = signal(false);
 export const pendingDayShift = signal<PendingDayShift | null>(null);
 
+// Dialog shown when an action is rejected because it would break chronological order
+export const blockedAction = signal<BlockedAction | null>(null);
+
 // Rebase recovery
 export const rebaseInProgress = signal(false);
 export const rebaseHasBackup = signal(false);
@@ -183,6 +199,30 @@ export const authors = computed(() => initialData.value?.authors ?? 0);
 export const version = computed(() => initialData.value?.version ?? '');
 
 // --- Actions ---
+
+export class BlockedActionError extends Error {}
+
+async function throwResponseError(res: Response, fallback: string): Promise<never> {
+  const data: { error?: string; code?: string; conflict?: BlockedAction['conflict'] } = await res
+    .json()
+    .catch(() => ({}));
+  if (data.code === 'chronology') {
+    blockedAction.value = {
+      title: 'Action not possible',
+      message: data.conflict
+        ? 'This change would break the chronological order of your commits.'
+        : (data.error ?? fallback),
+      hint: 'Pick a time between the neighbouring commits, or move them together.',
+      conflict: data.conflict,
+    };
+    throw new BlockedActionError(data.error);
+  }
+  throw new Error(data.error || fallback);
+}
+
+export function dismissBlockedAction(): void {
+  blockedAction.value = null;
+}
 
 export async function fetchCommits(page: number): Promise<void> {
   try {
@@ -342,10 +382,7 @@ export async function updateCommit(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to update date');
-    }
+    if (!res.ok) await throwResponseError(res, 'Failed to update date');
     closeModal();
     await fetchCommits(currentPage.value);
   } finally {
@@ -483,16 +520,15 @@ export async function bulkShift(shiftMs: number): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ hashes, shiftMs }),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to shift commits');
-    }
+    if (!res.ok) await throwResponseError(res, 'Failed to shift commits');
     selectionMode.value = false;
     selectedHashes.value = new Set();
     bulkShiftError.value = null;
     await fetchCommits(currentPage.value);
   } catch (err) {
-    bulkShiftError.value = err instanceof Error ? err.message : 'Failed to shift commits';
+    if (!(err instanceof BlockedActionError)) {
+      bulkShiftError.value = err instanceof Error ? err.message : 'Failed to shift commits';
+    }
   } finally {
     bulkShiftLoading.value = false;
     reloadSuppressed.value = false;
@@ -511,10 +547,7 @@ export async function shiftDayCommits(sourceDate: string, targetDate: string): P
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sourceDate, targetDate }),
     });
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Failed to move commits to the target day');
-    }
+    if (!res.ok) await throwResponseError(res, 'Failed to move commits to the target day');
 
     activeDate.value = targetDate;
     selectionMode.value = false;
@@ -528,7 +561,9 @@ export async function shiftDayCommits(sourceDate: string, targetDate: string): P
       checkRebaseStatus(),
     ]);
   } catch (err) {
-    networkError.value = err instanceof Error ? err.message : 'Failed to move commits to the target day';
+    if (!(err instanceof BlockedActionError)) {
+      networkError.value = err instanceof Error ? err.message : 'Failed to move commits to the target day';
+    }
   } finally {
     dayShiftLoading.value = false;
     reloadSuppressed.value = false;

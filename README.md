@@ -15,6 +15,7 @@ Interactive commit heatmap dashboard for any git repository.
 - Recent commits panel with messages and timestamps
 - Commit editing: rewrite messages, authors, dates, and emails
 - Bulk timestamp shift: move multiple commits forward or backward in time
+- Chronology guard: edits that would put commits out of chronological order are blocked
 - Reflog panel: browse recent HEAD movements
 - Author leaderboard with per-author commit breakdown
 - Rebase recovery: automatic backup refs with abort/restore UI

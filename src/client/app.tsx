@@ -1,7 +1,15 @@
 import { render } from 'preact';
 import { useEffect } from 'preact/hooks';
 import type { InitialData } from '@/client/state';
-import { cancelDayShiftConfirm, closeAuthorModal, closeModal, initFromServerData, initSSE } from '@/client/state';
+import {
+  blockedAction,
+  cancelDayShiftConfirm,
+  closeAuthorModal,
+  closeModal,
+  dismissBlockedAction,
+  initFromServerData,
+  initSSE,
+} from '@/client/state';
 
 import '@/client/styles/variables.scss';
 import '@/client/styles/base.scss';
@@ -12,6 +20,7 @@ import '@/client/styles/modal.scss';
 import '@/client/styles/trace.scss';
 
 import { AuthorModal } from '@/client/components/AuthorModal';
+import { BlockedActionDialog } from '@/client/components/BlockedActionDialog';
 import { BulkShiftBar } from '@/client/components/BulkShiftBar';
 import { CommitList } from '@/client/components/CommitList';
 import { CommitModal } from '@/client/components/CommitModal';
@@ -34,7 +43,11 @@ declare global {
 function App() {
   useEffect(() => {
     const handleKeydown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key !== 'Escape') return;
+      if (blockedAction.value) {
+        // Close only the topmost dialog; the commit modal may still be open underneath
+        dismissBlockedAction();
+      } else {
         closeModal();
         closeAuthorModal();
         cancelDayShiftConfirm();
@@ -65,6 +78,7 @@ function App() {
       <ConfirmDialog />
       <RemoteConfirmDialog />
       <DayShiftConfirmDialog />
+      <BlockedActionDialog />
     </>
   );
 }
