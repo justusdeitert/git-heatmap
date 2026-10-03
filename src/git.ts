@@ -793,7 +793,8 @@ function assertValidCommitDates(changes: ReadonlyMap<string, NewCommitDates>): v
   );
 }
 
-export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
+/** Shifts commit dates by `shiftMs`. With `dryRun`, only runs all checks and leaves history untouched. */
+export function bulkShiftCommits(hashes: string[], shiftMs: number, { dryRun = false } = {}): void {
   if (hashes.length === 0) return;
   if (isRebaseInProgress()) throw new Error('A rebase is already in progress. Abort or resolve it first.');
   if (hasUncommittedChanges()) {
@@ -817,6 +818,7 @@ export function bulkShiftCommits(hashes: string[], shiftMs: number): void {
     dateMap.set(t.fullHash, { authorDate: newAuthor, committerDate: newCommitter });
   }
   assertValidCommitDates(dateMap);
+  if (dryRun) return;
 
   // Find the oldest commit in the selection (furthest from HEAD)
   const allHashes = git('git rev-list HEAD').split('\n').filter(Boolean);

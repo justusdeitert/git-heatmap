@@ -580,11 +580,35 @@ export async function shiftDayCommits(sourceDate: string, targetDate: string): P
   }
 }
 
-export function requestDayShiftConfirm(sourceDate: string, targetDate: string, commitCount: number): void {
-  if (!sourceDate || !targetDate || sourceDate === targetDate || commitCount <= 0) return;
+let dayShiftChecking = false;
 
-  pendingDayShift.value = { sourceDate, targetDate, commitCount };
-  dayShiftConfirmVisible.value = true;
+/** Validates the move on the server first, so blocked moves only show the "Action not possible" dialog. */
+export async function requestDayShiftConfirm(
+  sourceDate: string,
+  targetDate: string,
+  commitCount: number,
+): Promise<void> {
+  if (!sourceDate || !targetDate || sourceDate === targetDate || commitCount <= 0 || dayShiftChecking) return;
+
+  dayShiftChecking = true;
+  networkError.value = null;
+  try {
+    const res = await fetch('/api/commits/day-shift', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sourceDate, targetDate, dryRun: true }),
+    });
+    if (!res.ok) await throwResponseError(res, 'Failed to move commits to the target day');
+
+    pendingDayShift.value = { sourceDate, targetDate, commitCount };
+    dayShiftConfirmVisible.value = true;
+  } catch (err) {
+    if (!(err instanceof BlockedActionError)) {
+      networkError.value = err instanceof Error ? err.message : 'Failed to move commits to the target day';
+    }
+  } finally {
+    dayShiftChecking = false;
+  }
 }
 
 export function cancelDayShiftConfirm(): void {

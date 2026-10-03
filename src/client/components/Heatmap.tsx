@@ -236,7 +236,7 @@ export function Heatmap() {
       resetDragState();
 
       if (shouldShift) {
-        requestDayShiftConfirm(sourceDate!, targetDate!, sourceCount);
+        void requestDayShiftConfirm(sourceDate!, targetDate!, sourceCount);
       }
     };
 

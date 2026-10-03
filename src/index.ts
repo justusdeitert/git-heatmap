@@ -369,7 +369,7 @@ async function handleBulkShift(req: IncomingMessage, res: ServerResponse): Promi
 
 async function handleDayShift(req: IncomingMessage, res: ServerResponse): Promise<void> {
   try {
-    const body = await parseRequestBody<{ sourceDate?: string; targetDate?: string }>(req);
+    const body = await parseRequestBody<{ sourceDate?: string; targetDate?: string; dryRun?: boolean }>(req);
     const sourceDate = body.sourceDate?.trim();
     const targetDate = body.targetDate?.trim();
     const datePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -412,12 +412,14 @@ async function handleDayShift(req: IncomingMessage, res: ServerResponse): Promis
       return;
     }
 
+    const dryRun = body.dryRun === true;
     bulkShiftCommits(
       commits.map((commit) => commit.fullHash),
       shiftMs,
+      { dryRun },
     );
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ ok: true, shifted: commits.length }));
+    res.end(JSON.stringify({ ok: true, dryRun, shifted: commits.length }));
   } catch (err) {
     sendRequestError(res, err);
   }
